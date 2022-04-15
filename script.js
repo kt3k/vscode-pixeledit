@@ -35,7 +35,6 @@ class Canvas {
     );
     this.steps = [];
     this.redo_arr = [];
-    this.frames = [];
 
     this.previous_point = new Point(undefined, undefined);
     // Moved on-click to on-mouse-up to tell the difference
@@ -188,32 +187,6 @@ class Canvas {
     this.setmode(Tool.pen);
   }
 
-  addFrame(data = null) {
-    const img = new Image();
-    img.src = data || this.canvas.toDataURL();
-    this.frames.push([img, this.data.map((inner) => inner.slice())]);
-  }
-
-  deleteFrame(f) {
-    this.frames.splice(f, 1);
-  }
-
-  loadFrame(f) {
-    this.clear();
-    const img = this.frames[f][1];
-    const tmp_color = this.color;
-    const tmp_alpha = this.ctx.globalAlpha;
-    this.ctx.globalAlpha = 1;
-    for (let i = 0; i < this.width; i++) {
-      for (let j = 0; j < this.height; j++) {
-        this.setcolor(img[i][j]);
-        this.draw(i, j);
-      }
-    }
-    this.setcolor(tmp_color);
-    this.ctx.globalAlpha = tmp_alpha;
-  }
-
   undo() {
     this.clear();
     this.redo_arr.push(this.steps.pop());
@@ -234,8 +207,6 @@ class Canvas {
   }
 
   saveInLocal() {
-    /*let a = this.frames.map(frame=> [frame[0].src,frame[1]]);
-    let f =  JSON.stringify(a);*/
     const d = {
       "colors": window.colors,
       "currColor": this.color,
@@ -300,37 +271,6 @@ class Popup {
   }
 }
 
-class Frames {
-  static open() {
-    document.querySelector("#frames").style.display = "block";
-    document.querySelector("#frames").style.transform =
-      "translate(-50%,-50%) scale(1,1)";
-    document.querySelector("#frames").focus();
-    document.querySelector("#frames #gallery").innerHTML = "";
-    for (const frame of board.frames) {
-      document.querySelector("#frames #gallery").appendChild(frame[0]);
-    }
-    document.querySelectorAll("#frames #gallery img").forEach((x, i) => {
-      x.onclick = (_e) => {
-        board.loadFrame(i);
-        Frames.close();
-      };
-      x.oncontextmenu = (e) => {
-        e.preventDefault();
-        const del_confirmation = confirm("Delete?");
-        if (del_confirmation) {
-          board.deleteFrame(i);
-          Frames.open();
-        }
-      };
-    });
-  }
-  static close() {
-    document.querySelector("#frames").style.transform =
-      "translate(-50%,-50%) scale(0,0)";
-  }
-}
-
 window.onload = function () {
   const canvasData = localStorage.getItem("pc-canvas-data");
   if (canvasData) {
@@ -388,7 +328,6 @@ document.querySelector("#close").onclick = function () {
   );
   window.board.steps = [];
   window.board.redo_arr = [];
-  window.board.frames = [];
 
   window.board.setcolor([0, 0, 0, 255]);
   window.dim.close();
