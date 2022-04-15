@@ -8,13 +8,12 @@ const Tool = {
   "line": 3,
   "circle": 4,
   "ellipse": 5,
-  "addFrame": 6,
   "undo": 7,
   "redo": 8,
   "clearCanvas": 9,
 };
-const tools = [true, false, false, false, false, false];
-const lc = [];
+let tools = [true, false, false, false, false, false];
+let lc = [];
 class Canvas {
   constructor(width, height) {
     this.canvas = document.querySelector("#canvas");
@@ -250,6 +249,7 @@ class Canvas {
     localStorage.setItem("pc-canvas-data", JSON.stringify(d));
   }
 
+  /** Import image from the given external file */
   addImage() {
     const fp = document.createElement("input");
     fp.type = "file";
@@ -257,7 +257,7 @@ class Canvas {
     fp.onchange = (e) => {
       const reader = new FileReader();
       reader.readAsDataURL(e.target.files[0]);
-      reader.onload = function () {
+      reader.onload = () => {
         const uimg = new Image();
         uimg.src = reader.result;
         uimg.width = this.w;
@@ -270,8 +270,8 @@ class Canvas {
           pxctx.drawImage(uimg, 0, 0, this.w, this.h);
           for (let i = 0; i < this.width; i++) {
             for (let j = 0; j < this.height; j++) {
-              const ctr = 0;
-              const avg = [0, 0, 0, 0];
+              let ctr = 0;
+              let avg = [0, 0, 0, 0];
               const pix = pxctx.getImageData(10 * i, 10 * j, 10, 10).data;
               pix.forEach((x, k) => {
                 avg[k % 4] += x;
