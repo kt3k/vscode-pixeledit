@@ -1,4 +1,11 @@
 {
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-window-prefix"
+      ]
+    }
+  },
   "tasks": {
     "fmt": "deno fmt && npx prettier -w style.css index.html"
   }

@@ -1,4 +1,7 @@
-var Tool = {
+// Copyright 2022 Yoshiya Hinosawa. All rights reserved. MIT license.
+// Copyright 2021 PixelCraft. All rights reserved. MIT license.
+
+const Tool = {
   "pen": 0,
   "eraser": 1,
   "fillBucket": 2,
@@ -10,8 +13,8 @@ var Tool = {
   "redo": 8,
   "clearCanvas": 9,
 };
-var tools = [true, false, false, false, false, false];
-var lc = [];
+const tools = [true, false, false, false, false, false];
+const lc = [];
 class Canvas {
   constructor(width, height) {
     this.canvas = document.querySelector("#canvas");
@@ -28,7 +31,7 @@ class Canvas {
     this.ctx.fillStyle = "white";
     this.ctx.globalAlpha = 1;
     this.ctx.fillRect(0, 0, this.w, this.h);
-    this.data = [...Array(this.width)].map((e) =>
+    this.data = [...Array(this.width)].map((_e) =>
       Array(this.height).fill([255, 255, 255, 255])
     );
     this.steps = [];
@@ -41,13 +44,13 @@ class Canvas {
 
     this.canvas.addEventListener("mousemove", (e) => {
       if (this.active) {
-        var rect = this.canvas.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var y = e.clientY - rect.top;
+        const rect = this.canvas.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
         x = Math.floor(this.width * x / this.canvas.clientWidth);
         y = Math.floor(this.height * y / this.canvas.clientHeight);
         if (tools[Tool.pen]) {
-          var p = new Point(x, y);
+          const p = new Point(x, y);
           if (!p.equals(this.previous_point)) {
             this.previous_point = p;
             this.draw(p.x, p.y);
@@ -59,13 +62,13 @@ class Canvas {
     });
 
     this.canvas.addEventListener("touchmove", (e) => {
-      var rect = this.canvas.getBoundingClientRect();
-      var x = e.touches[0].clientX - rect.left;
-      var y = e.touches[0].clientY - rect.top;
+      const rect = this.canvas.getBoundingClientRect();
+      let x = e.touches[0].clientX - rect.left;
+      let y = e.touches[0].clientY - rect.top;
       x = Math.floor(this.width * x / this.canvas.clientWidth);
       y = Math.floor(this.height * y / this.canvas.clientHeight);
       if (tools[Tool.pen]) {
-        var p = new Point(x, y);
+        const p = new Point(x, y);
         if (!p.equals(this.previous_point)) {
           this.previous_point = p;
           this.draw(p.x, p.y);
@@ -75,7 +78,7 @@ class Canvas {
       }
     });
 
-    this.canvas.addEventListener("mousedown", (e) => {
+    this.canvas.addEventListener("mousedown", (_e) => {
       this.previous_point = new Point(undefined, undefined);
       this.active = true;
       console.log("Active");
@@ -86,16 +89,16 @@ class Canvas {
         return; // Don't re-paint the last point in a streak
       }
 
-      var rect = this.canvas.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
+      const rect = this.canvas.getBoundingClientRect();
+      let x = e.clientX - rect.left;
+      let y = e.clientY - rect.top;
       x = Math.floor(this.width * x / this.canvas.clientWidth);
       y = Math.floor(this.height * y / this.canvas.clientHeight);
       if (tools[Tool.fillBucket]) {
         filler(x, y, this.data[x][y]);
       } else if (tools[Tool.eraser]) {
-        var temp = this.color;
-        var tga = this.ctx.globalAlpha;
+        const temp = this.color;
+        const tga = this.ctx.globalAlpha;
         this.setcolor([255, 255, 255, 255]);
         this.draw(x, y);
         this.setcolor(temp);
@@ -103,22 +106,20 @@ class Canvas {
       } else if (tools[Tool.line]) {
         lc.push(new Point(x, y));
         if (lc.length == 2) {
-          var lp = line(lc[0], lc[1]);
+          const lp = line(lc[0], lc[1]);
           lc = [];
-          var p;
-          for (p of lp) this.draw(p.x, p.y);
+          for (const p of lp) this.draw(p.x, p.y);
         }
       } else if (tools[Tool.circle]) {
-        var centre = new Point(x, y);
-        var radius = +prompt("radius?");
-        var lp = circle(radius, centre);
-        var p;
-        for (p of lp) this.draw(p.x, p.y);
+        const centre = new Point(x, y);
+        const radius = +prompt("radius?");
+        const lp = circle(radius, centre);
+        for (const p of lp) this.draw(p.x, p.y);
       } else if (tools[Tool.ellipse]) {
-        var center = new Point(x, y);
-        var radiusX = +prompt("X radius?");
-        var radiusY = +prompt("Y radius?");
-        var lp = ellipse(radiusX, radiusY, center);
+        const center = new Point(x, y);
+        const radiusX = +prompt("X radius?");
+        const radiusY = +prompt("Y radius?");
+        const lp = ellipse(radiusX, radiusY, center);
         for (p of lp) {
           this.draw(p.x, p.y);
         }
@@ -147,8 +148,8 @@ class Canvas {
     }
   }
   erase(x, y) {
-    var temp = this.color;
-    var tga = this.ctx.globalAlpha;
+    const temp = this.color;
+    const tga = this.ctx.globalAlpha;
     this.setcolor([255, 255, 255, 255]);
     this.draw(x, y);
     this.setcolor(temp);
@@ -170,8 +171,8 @@ class Canvas {
   }
   save() {
     this.canvas.toBlob(function (blob) {
-      var url = URL.createObjectURL(blob);
-      var link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
       link.download = "canvas.png";
       link.href = url;
       link.click();
@@ -181,7 +182,7 @@ class Canvas {
   clear() {
     this.ctx.fillStyle = "white";
     this.ctx.fillRect(0, 0, this.w, this.h);
-    this.data = [...Array(this.width)].map((e) =>
+    this.data = [...Array(this.width)].map((_e) =>
       Array(this.height).fill([255, 255, 255, 255])
     );
     this.setcolor(this.color);
@@ -189,7 +190,7 @@ class Canvas {
   }
 
   addFrame(data = null) {
-    var img = new Image();
+    const img = new Image();
     img.src = data || this.canvas.toDataURL();
     this.frames.push([img, this.data.map((inner) => inner.slice())]);
   }
@@ -200,13 +201,12 @@ class Canvas {
 
   loadFrame(f) {
     this.clear();
-    var img = this.frames[f][1];
-    var tmp_color = this.color;
-    var tmp_alpha = this.ctx.globalAlpha;
+    const img = this.frames[f][1];
+    const tmp_color = this.color;
+    const tmp_alpha = this.ctx.globalAlpha;
     this.ctx.globalAlpha = 1;
-    var i, j;
-    for (i = 0; i < this.width; i++) {
-      for (j = 0; j < this.height; j++) {
+    for (let i = 0; i < this.width; i++) {
+      for (let j = 0; j < this.height; j++) {
         this.setcolor(img[i][j]);
         this.draw(i, j);
       }
@@ -218,7 +218,6 @@ class Canvas {
   undo() {
     this.clear();
     this.redo_arr.push(this.steps.pop());
-    var step;
     this.steps.forEach((step) => {
       this.setcolor(step[2]);
       this.ctx.globalAlpha = step[3];
@@ -228,7 +227,6 @@ class Canvas {
 
   redo() {
     this.steps.push(this.redo_arr.pop());
-    var step;
     this.steps.forEach((step) => {
       this.setcolor(step[2]);
       this.ctx.globalAlpha = step[3];
@@ -239,7 +237,7 @@ class Canvas {
   saveInLocal() {
     /*let a = this.frames.map(frame=> [frame[0].src,frame[1]]);
     let f =  JSON.stringify(a);*/
-    let d = {
+    const d = {
       "colors": window.colors,
       "currColor": this.color,
       "width": this.width,
@@ -253,37 +251,35 @@ class Canvas {
   }
 
   addImage() {
-    var _this = this;
-    var fp = document.createElement("input");
+    const fp = document.createElement("input");
     fp.type = "file";
     fp.click();
-    fp.onchange = function (e) {
-      var reader = new FileReader();
+    fp.onchange = (e) => {
+      const reader = new FileReader();
       reader.readAsDataURL(e.target.files[0]);
       reader.onload = function () {
-        var uimg = new Image();
+        const uimg = new Image();
         uimg.src = reader.result;
-        uimg.width = _this.w;
-        uimg.height = _this.h;
-        uimg.onload = function () {
-          var pxc = document.createElement("canvas");
-          pxc.width = _this.w;
-          pxc.height = _this.h;
-          var pxctx = pxc.getContext("2d");
-          pxctx.drawImage(uimg, 0, 0, _this.w, _this.h);
-          var i, j;
-          for (i = 0; i < _this.width; i++) {
-            for (j = 0; j < _this.height; j++) {
-              var ctr = 0;
-              var avg = [0, 0, 0, 0];
-              var pix = pxctx.getImageData(10 * i, 10 * j, 10, 10).data;
+        uimg.width = this.w;
+        uimg.height = this.h;
+        uimg.onload = () => {
+          const pxc = document.createElement("canvas");
+          pxc.width = this.w;
+          pxc.height = this.h;
+          const pxctx = pxc.getContext("2d");
+          pxctx.drawImage(uimg, 0, 0, this.w, this.h);
+          for (let i = 0; i < this.width; i++) {
+            for (let j = 0; j < this.height; j++) {
+              const ctr = 0;
+              const avg = [0, 0, 0, 0];
+              const pix = pxctx.getImageData(10 * i, 10 * j, 10, 10).data;
               pix.forEach((x, k) => {
                 avg[k % 4] += x;
                 if (k % 4 == 0) ctr++;
               });
               avg = avg.map((x) => ~~(x / ctr));
-              _this.setcolor(avg);
-              _this.draw(i, j);
+              this.setcolor(avg);
+              this.draw(i, j);
             }
           }
         };
@@ -311,17 +307,17 @@ class Frames {
       "translate(-50%,-50%) scale(1,1)";
     document.querySelector("#frames").focus();
     document.querySelector("#frames #gallery").innerHTML = "";
-    for (var frame of board.frames) {
+    for (const frame of board.frames) {
       document.querySelector("#frames #gallery").appendChild(frame[0]);
     }
     document.querySelectorAll("#frames #gallery img").forEach((x, i) => {
-      x.onclick = (e) => {
+      x.onclick = (_e) => {
         board.loadFrame(i);
         Frames.close();
       };
       x.oncontextmenu = (e) => {
         e.preventDefault();
-        var del_confirmation = confirm("Delete?");
+        const del_confirmation = confirm("Delete?");
         if (del_confirmation) {
           board.deleteFrame(i);
           Frames.open();
@@ -336,7 +332,7 @@ class Frames {
 }
 
 window.onload = function () {
-  let canvasData = localStorage.getItem("pc-canvas-data");
+  const canvasData = localStorage.getItem("pc-canvas-data");
   if (canvasData) {
     data = JSON.parse(canvasData);
     console.log(data);
@@ -345,7 +341,7 @@ window.onload = function () {
       window.board = new Canvas(data.width, data.height);
     }
 
-    let img = new Image();
+    const img = new Image();
     img.setAttribute("src", data.url);
     img.addEventListener("load", function () {
       window.board.ctx.drawImage(img, 0, 0);
@@ -369,8 +365,8 @@ window.onload = function () {
 };
 
 document.querySelector("#close").onclick = function () {
-  var width = +document.querySelector("#width").value;
-  var height = +document.querySelector("#height").value;
+  const width = +document.querySelector("#width").value;
+  const height = +document.querySelector("#height").value;
   if (window.board == undefined) {
     window.board = new Canvas(width, height);
   }
@@ -387,7 +383,7 @@ document.querySelector("#close").onclick = function () {
   window.board.ctx.fillStyle = "white";
   window.board.ctx.globalAlpha = 1;
   window.board.ctx.fillRect(0, 0, window.board.w, window.board.h);
-  window.board.data = [...Array(window.board.width)].map((e) =>
+  window.board.data = [...Array(window.board.width)].map((_e) =>
     Array(window.board.height).fill([255, 255, 255, 255])
   );
   window.board.steps = [];
@@ -445,6 +441,7 @@ function filler(x, y, cc) {
   }
 }
 
+// deno-lint-ignore no-unused-vars
 function act(clr) {
   document.querySelectorAll("#palette .item").forEach((x) =>
     x.style.boxShadow = ""
@@ -456,28 +453,6 @@ window.onbeforeunload = function () {
   board.saveInLocal();
   return "Data will be lost if you leave the page, are you sure?";
 };
-
-var scope = {
-  scope: "./",
-};
-
-var msg;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  msg = e;
-  // Shows the install button only when the app is installable
-  document.querySelector("#install-pwa-btn").classList.remove("display-none");
-});
-
-function install() {
-  msg.prompt();
-  msg.userChoice.then((choiceResult) => {
-    if (choiceResult.outcome === "accepted") {
-      // Hides the install button
-      document.querySelector("#install-pwa-btn").classList.add("display-none");
-    }
-  });
-}
 
 window.onerror = function (errorMsg, url, lineNumber) {
   alert("Error: " + errorMsg + " Script: " + url + " Line: " + lineNumber);
