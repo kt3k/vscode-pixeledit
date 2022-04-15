@@ -1,738 +1,98 @@
 <html>
-<head>
-<title>Pixel Edit</title>
-<script src="https://kit.fontawesome.com/473e8f3a80.js" crossorigin="anonymous"></script>
-<script src="lib/Matrix.js" async></script>
-<script src="lib/Shapes.js" async></script>
-<script src="lib/Transformation.js" async></script>
-<style>
-
-body {
-  background-color: #232125;
-  margin: 0px;
-}
-
-#popup, #frames {
-  background-color: #332f35;
-  color: white;
-  font-size: 20px;
-  padding: 30px;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.1, 0.1);
-  text-align: center;
-  max-width: 420px;
-  width: 70%;
-  transition: 0.2s all;
-  z-index: 2;
-  border-radius: 5px;
-}
-#popup {
-  display: none;
-}
-#popup h3 {
-  line-height: 30px;
-}
-
-#frames {
-  display: none;
-  padding: 10px;
-}
-
-#frames #gallery {
-  padding: 10px 10px 10px 10px;
-  overflow: hidden;
-  white-space: nowrap;
-  scroll-behavior: smooth;
-}
-
-#frames .btn {
-  position: absolute;
-  background-color: rgba(255,255,255,0.5);
-  color: black;
-  font-size: 20px;
-  padding: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-radius: 50%;
-  z-index: 2;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-}
-
-#frames img {
-  width: 100px;
-  margin: 10px; 
-}
-
-#width,
-#height {
-  background-color: #262327;
-  color: white;
-  margin: 10px;
-  padding: 5px;
-  font-size: 14px;
-  font-weight: bolder;
-  border: none;
-  border-radius: 3px;
-  max-width: 60px;
-}
-
-#close {
-  background-color: #262327;
-  color: white;
-  margin: 15px auto 5px auto;
-  padding: 5px 10px 5px 10px;
-  font-size: 18px;
-  font-weight: bolder;
-  display: block;
-  border: none;
-  border-radius: 3px;
-  max-width: 60px;
-  transition: 0.2s all;
-}
-
-#close:hover {
-  box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.5);
-}
-
-#canvas {
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 75%;
-  max-width: 550px;
-  display: none;
-  cursor: crosshair;
-  touch-action: none;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-#toolbar {
-  position: fixed;
-  top: 50%;
-  left: 0%;
-  transform: translateY(-50%);
-  padding: 0px;
-  color: white;
-  max-width: 150px;
-}
-
-#toolbar .item {
-  display: inline-block;
-  float: left;
-  padding: 15px;
-  border: 1px solid #FFF;
-  cursor: pointer;
-  height: 32px;
-  width: 32px;
-  font-family: Arial, FontAwesome;
-  font-size: 24px;
-}
-
-#palette {
-  position: fixed;
-  top: 50%;
-  right: 0%;
-  transform: translateY(-50%);
-  padding: 0px;
-  color: white;
-  max-width: 100px;
-}
-
-#palette .item {
-  display: inline-block;
-  float: left;
-  padding: 25px;
-  cursor: pointer;
-}
-
-path {
-  fill: white;
-}
-
-.display-none {
-  display: none;
-}
-
-.item:hover {
-  background-color: grey;
-}
-
-.menubtn {
-  position: fixed;
-  left: 20px;
-  top: 20px;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  background-color: #332f35;
-  color: white;
-  padding: 5px 15px 5px 15px;
-  border-radius: 5px;
-  font-size: 25px;
-  font-weight: bolder;
-  cursor: pointer;
-  z-index: 3;
-}
-
-.menu {
-  position: fixed;
-  top: 70px;
-  left: 20px;
-  border-radius: 5px;
-  padding: 0px;
-  color: white;
-  z-index: 3;
-  display: none;
-}
-
-.menu li {
-  padding: 5px 20px 5px 20px;
-  list-style: none;
-  background-color: #332f35;
-  cursor: pointer;
-}
-
-.menu li i {
-  padding-right: 10px;
-}
-
-.menu li a {
-  text-decoration: none;
-  color: white;
-}
-
-@media only screen and (max-width: 600px) {
-  #toolbar {
-    position: fixed;
-    top: 100%;
-    left: 50%;
-    min-width: 100%;
-    transform: translate(-50%, -100%);
-    padding: 0px;
-    color: white;
-  }
-  #palette {
-    position: fixed;
-    top: 0%;
-    transform: translateY(0%);
-    min-width: 100%;
-    padding: 0px;
-    color: white;
-  }
-  #toolbar .item {
-    width: 20px;
-    height: 20px;
-  }
-  #palette .item {
-    padding: 15px;
-  }
-  .menubtn {
-    top:70px;
-  }
-  .menu {
-    top:110px;
-  }
-}
-</style>
-</head>
-<body>
+  <head>
+    <title>Pixel Edit</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div class="menubtn">☰</div>
     <ul class="menu">
       <li onclick="newProject()">New</li>
       <li onclick="board.save()">Save image</li>
-      <li id="install-pwa-btn" class="display-none" onclick="install()">Install PWA</li>
-      <li><a href="https://github.com/rgab1508/PixelCraft" target="_blank"><i class="fab fa-github"></i>Github</a></li>
+      <li id="install-pwa-btn" class="display-none" onclick="install()">
+        Install PWA
+      </li>
+      <li>
+        <a href="https://github.com/rgab1508/PixelCraft" target="_blank"
+          ><i class="fab fa-github"></i>Github</a
+        >
+      </li>
     </ul>
     <div id="popup">
       <h3>Select the Dimensions Of the grid</h3>
-      <input type="text" id="width" value="16">X<input type="text" id="height" value="16">
+      <input type="text" id="width" value="16" />X<input
+        type="text"
+        id="height"
+        value="16"
+      />
       <button id="close">OK</button>
     </div>
     <div id="frames" onblur="Frames.close()" tabindex="0">
-    <div class="btn" style="left: 10px;" onclick="document.querySelector('#frames #gallery').scrollLeft-=100;"><i class="fa fa-chevron-left"></i></div>
-    <div class="btn" style="right: 10px;" onclick="document.querySelector('#frames #gallery').scrollLeft+=100;"><i class="fa fa-chevron-right"></i></div>
-    <div id="gallery"></div>
-    </div>
+      <div
+        class="btn"
+        style="left: 10px"
+        onclick="document.querySelector('#frames #gallery').scrollLeft-=100;"
+      >
+        <i class="fa fa-chevron-left"></i>
+      </div>
+      <div
+        class="btn"
+        style="right: 10px"
+        onclick="document.querySelector('#frames #gallery').scrollLeft+=100;"
+      >
+        <i class="fa fa-chevron-right"></i>
+      </div>
+      <div id="gallery"></div>
     </div>
     <canvas id="canvas"></canvas>
     <div id="toolbar">
-      <span class="item" onclick="board.setmode(0)" style="background-color: grey;"><i class="fas fa-pencil-alt"></i></span>
-      <span class="item" onclick="board.setmode(1)"><i class="fas fa-eraser"></i></span>
-      <span class="item" onclick="board.setmode(2)"><i class="fas fa-fill"></i></span>
-      <span class="item" onclick="board.setmode(3)"><i class="fas fa-slash"></i></span>
-      <span class="item" onclick="board.setmode(4)"><i class="far fa-circle"></i></span>
-      <span class="item" onclick="board.setmode(5)"><i class="far fa-circle" style="transform: rotateX(45deg);"></i></span>
-      <span class="item" onclick="board.addFrame()"><i class="fas fa-plus"></i></span>
-      <span class="item" onclick="board.undo()"><i class="fas fa-undo"></i></span>
-      <span class="item" onclick="board.redo()"><i class="fas fa-redo"></i></span>
-      <span class="item" onclick="board.clear()"><i class="fas fa-trash"></i></span>
-      <span class="item" onclick="board.addImage()"><i class="fa fa-upload"></i></span>
-      <span class="item" onclick="Frames.open()"><i class="fas fa-eye"></i></span>
+      <span
+        class="item"
+        onclick="board.setmode(0)"
+        style="background-color: grey"
+        ><i class="fas fa-pencil-alt"></i
+      ></span>
+      <span class="item" onclick="board.setmode(1)"
+        ><i class="fas fa-eraser"></i
+      ></span>
+      <span class="item" onclick="board.setmode(2)"
+        ><i class="fas fa-fill"></i
+      ></span>
+      <span class="item" onclick="board.setmode(3)"
+        ><i class="fas fa-slash"></i
+      ></span>
+      <span class="item" onclick="board.setmode(4)"
+        ><i class="far fa-circle"></i
+      ></span>
+      <span class="item" onclick="board.setmode(5)"
+        ><i class="far fa-circle" style="transform: rotateX(45deg)"></i
+      ></span>
+      <span class="item" onclick="board.addFrame()"
+        ><i class="fas fa-plus"></i
+      ></span>
+      <span class="item" onclick="board.undo()"
+        ><i class="fas fa-undo"></i
+      ></span>
+      <span class="item" onclick="board.redo()"
+        ><i class="fas fa-redo"></i
+      ></span>
+      <span class="item" onclick="board.clear()"
+        ><i class="fas fa-trash"></i
+      ></span>
+      <span class="item" onclick="board.addImage()"
+        ><i class="fa fa-upload"></i
+      ></span>
+      <span class="item" onclick="Frames.open()"
+        ><i class="fas fa-eye"></i
+      ></span>
     </div>
     <div id="palette"></div>
-</body>
-<script type="text/javascript">
-var Tool = {
-  "pen": 0,
-  "eraser": 1,
-  "fillBucket": 2,
-  "line": 3,
-  "circle": 4,
-  "ellipse": 5,
-  "addFrame": 6,
-  "undo": 7,
-  "redo": 8,
-  "clearCanvas": 9
-};
-var tools = [true, false, false, false, false, false];
-var lc = [];
-class Canvas {
-  constructor(width, height) {
-    this.canvas = document.querySelector("#canvas");
-    this.canvas.width = 10 * width;
-    this.canvas.height = 10 * height;
-    this.width = width;
-    this.height = height;
-    this.canvas.style.display = "block";
-    this.canvas.style.height = Math.floor((height / width) * this.canvas.clientWidth) + "px";
-    this.w = +this.canvas.width;
-    this.h = +this.canvas.height;
-    this.ctx = this.canvas.getContext("2d");
-    this.ctx.fillStyle = "white";
-    this.ctx.globalAlpha = 1;
-    this.ctx.fillRect(0, 0, this.w, this.h);
-    this.data = [...Array(this.width)].map(e => Array(this.height).fill([255, 255, 255, 255]));
-    this.steps = [];
-    this.redo_arr = [];
-    this.frames = [];
-    
-    this.previous_point = new Point(undefined,undefined)
-    // Moved on-click to on-mouse-up to tell the difference
-    //  between a click and a mouse-drag + click
-
-    this.canvas.addEventListener("mousemove", e => {
-      if (this.active) {
-        var rect = this.canvas.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var y = e.clientY - rect.top;
-        x = Math.floor(this.width * x / this.canvas.clientWidth);
-        y = Math.floor(this.height * y / this.canvas.clientHeight);
-        if(tools[Tool.pen]){
-          var p = new Point(x,y);
-          if (! p.equals(this.previous_point)) {
-            this.previous_point = p;
-            this.draw(p.x,p.y);
-          }
-        }
-        else if(tools[Tool.eraser]){
-          this.erase(x, y);
-        }
-      }
-    });
-
-    this.canvas.addEventListener("touchmove", e => {
-      var rect = this.canvas.getBoundingClientRect();
-      var x = e.touches[0].clientX - rect.left;
-      var y = e.touches[0].clientY - rect.top;
-      x = Math.floor(this.width * x / this.canvas.clientWidth);
-      y = Math.floor(this.height * y / this.canvas.clientHeight);
-      if(tools[Tool.pen]){
-        var p = new Point(x,y);
-        if (! p.equals(this.previous_point)) {
-          this.previous_point = p;
-          this.draw(p.x,p.y);
-        }
-      }
-      else if(tools[Tool.eraser]){
-        this.erase(x, y);
-      }
-    })
-
-    this.canvas.addEventListener("mousedown", e => {
-      this.previous_point = new Point(undefined,undefined)
-      this.active = true;
-      console.log("Active")
-    });
-    this.canvas.addEventListener("mouseup", e => {
-      this.active = false
-      if (this.previous_point.x !== undefined) {
-        return; // Don't re-paint the last point in a streak
-      }
-
-      var rect = this.canvas.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      x = Math.floor(this.width * x / this.canvas.clientWidth);
-      y = Math.floor(this.height * y / this.canvas.clientHeight);
-      if (tools[Tool.fillBucket]) {
-        filler(x, y, this.data[x][y]);
-      } else if (tools[Tool.eraser]) {
-        var temp = this.color;
-        var tga = this.ctx.globalAlpha;
-        this.setcolor([255, 255, 255, 255]);
-        this.draw(x, y);
-        this.setcolor(temp);
-        this.ctx.globalAlpha = tga;
-      } else if (tools[Tool.line]) {
-        lc.push(new Point(x, y));
-        if (lc.length == 2) {
-          var lp = line(lc[0], lc[1]);
-          lc = [];
-          var p;
-          for (p of lp) this.draw(p.x, p.y);
-        }
-      } else if (tools[Tool.circle]) {
-        var centre = new Point(x, y);
-        var radius = +prompt("radius?");
-        var lp = circle(radius, centre);
-        var p;
-        for (p of lp) this.draw(p.x, p.y);
-      } else if (tools[Tool.ellipse]) {
-        var center = new Point(x, y);
-        var radiusX = +prompt("X radius?");
-        var radiusY = +prompt("Y radius?");
-        var lp = ellipse(radiusX, radiusY, center);
-        for (p of lp)
-          this.draw(p.x, p.y);
-      } else {
-        this.previous_point = new Point(x,y);
-        this.draw(x, y);
-      }
-    });
-  }
-  draw(x, y, count) {
-  	if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-    	this.data[x][y] = this.color;
-    	this.ctx.fillRect(Math.floor(x * (this.w / this.width)), Math.floor(y * (this.h / this.height)), Math.floor(this.w / this.width), Math.floor(this.h / this.height));
-    	if (!count && JSON.stringify(this.steps[this.steps.length-1])!==JSON.stringify([x,y,this.color,this.ctx.globalAlpha])) this.steps.push([x,y,this.color,this.ctx.globalAlpha]);
-	}
-  }
-  erase(x, y){
-    var temp = this.color;
-    var tga = this.ctx.globalAlpha;
-    this.setcolor([255, 255, 255, 255]);
-    this.draw(x, y);
-    this.setcolor(temp);
-    this.ctx.globalAlpha = tga;
-  }
-  setcolor(color) {
-  	this.ctx.globalAlpha = 1;
-    this.color = color;
-    this.ctx.fillStyle = "rgba(" + color[0] + "," + color[1] + "," + color[2] + "," + color[3] + ")";
-  }
-  setmode(i) {
-    tools = [false, false, false, false, false, false];
-    tools[i] = true;
-    document.querySelectorAll("#toolbar .item").forEach((x, i) => {
-      if (tools[i]) x.style.backgroundColor = "grey";
-      else x.style.backgroundColor = "";
-    })
-  }
-  save() {
-    this.canvas.toBlob(function (blob) {
-      var url = URL.createObjectURL(blob);
-      var link = document.createElement('a');
-      link.download = 'canvas.png';
-      link.href = url;
-      link.click();
-    })
-  }
-
-  clear() {
-    this.ctx.fillStyle = "white";
-    this.ctx.fillRect(0, 0, this.w, this.h);
-    this.data = [...Array(this.width)].map(e => Array(this.height).fill([255, 255, 255, 255]));
-    this.setcolor(this.color);
-    this.setmode(Tool.pen);
-  }
-
-  addFrame(data=null) {
-    var img = new Image();
-    img.src = data || this.canvas.toDataURL();
-    this.frames.push([img,this.data.map(inner => inner.slice())]);
-  }
-
-  deleteFrame(f) {
-  	this.frames.splice(f,1);
-  }
-
-  loadFrame(f) {
-  	this.clear();
-  	var img = this.frames[f][1];
-  	var tmp_color = this.color;
-  	var tmp_alpha = this.ctx.globalAlpha;
-  	this.ctx.globalAlpha = 1;
-  	var i,j;
-  	for (i=0; i<this.width; i++) {
-  		for (j=0; j<this.height; j++) {
-  			this.setcolor(img[i][j]);
-  			this.draw(i,j);
-  		}
-  	}
-  	this.setcolor(tmp_color);
-  	this.ctx.globalAlpha = tmp_alpha;
-  }
-
-  undo() {
-  	this.clear();
-  	this.redo_arr.push(this.steps.pop());
-  	var step;
-  	this.steps.forEach(step => {
-  		this.setcolor(step[2]);
-  		this.ctx.globalAlpha = step[3];
-  		this.draw(step[0],step[1],true);
-  	});
-  }
-
-  redo() {
-  	this.steps.push(this.redo_arr.pop());
-  	var step;
-  	this.steps.forEach(step => {
-  		this.setcolor(step[2]);
-  		this.ctx.globalAlpha = step[3];
-  		this.draw(step[0],step[1],true);
-  	});
-  }
-
-  saveInLocal(){
-    /*let a = this.frames.map(frame=> [frame[0].src,frame[1]]);
-    let f =  JSON.stringify(a);*/
-    let d = {
-      'colors': window.colors,
-      'currColor': this.color,
-      'width': this.width,
-      'height': this.height,
-      'url': this.canvas.toDataURL(),
-      'steps': this.steps,
-      'redo_arr': this.redo_arr,
-      'dim': window.dim,
-    }
-    localStorage.setItem('pc-canvas-data', JSON.stringify(d));
-  }
-
-  addImage() {
-    var _this = this;
-    var fp = document.createElement("input");
-    fp.type = "file";
-    fp.click();
-    fp.onchange = function(e) {
-      var reader = new FileReader();
-      reader.readAsDataURL(e.target.files[0]);
-      reader.onload = function() {
-        var uimg = new Image();
-        uimg.src = reader.result;
-        uimg.width = _this.w;
-        uimg.height = _this.h;
-        uimg.onload = function() {
-          var pxc = document.createElement("canvas");
-          pxc.width = _this.w;
-          pxc.height = _this.h;
-          var pxctx = pxc.getContext("2d");
-          pxctx.drawImage(uimg,0,0,_this.w,_this.h);
-          var i,j;
-          for (i=0; i<_this.width; i++) {
-        	for (j=0; j<_this.height; j++) {
-        		var ctr = 0;
-        		var avg = [0,0,0,0];
-            	var pix = pxctx.getImageData(10*i, 10*j, 10, 10).data;
-            	pix.forEach((x,k) => {avg[k%4]+=x; if (k%4==0) ctr++;});
-            	avg = avg.map(x=>~~(x/ctr));
-            	_this.setcolor(avg);
-            	_this.draw(i,j);
-        	}
-    	  }
-        }
-      }
-    }
-  }
-}
-class Popup {
-  constructor(s) {
-    this.s = s;
-    document.querySelector(this.s).style.display = "block";
-    document.querySelector(this.s).style.transform = "translate(-50%,-50%) scale(1,1)";
-  }
-  close() {
-    document.querySelector(this.s).style.transform = "translate(-50%,-50%) scale(0,0)";
-  }
-}
-
-class Frames {
-  static open() {
-  	document.querySelector("#frames").style.display = "block";
-    document.querySelector("#frames").style.transform = "translate(-50%,-50%) scale(1,1)";
-    document.querySelector("#frames").focus();
-    document.querySelector("#frames #gallery").innerHTML="";
-    for (var frame of board.frames) document.querySelector("#frames #gallery").appendChild(frame[0]);
-    document.querySelectorAll("#frames #gallery img").forEach((x,i) => {
-    	x.onclick = (e) => {
-    		board.loadFrame(i);
-    		Frames.close();
-    	};
-    	x.oncontextmenu = (e) => {
-    		e.preventDefault();
-    		var del_confirmation = confirm("Delete?");
-    		if (del_confirmation) {
-    			board.deleteFrame(i);
-    			Frames.open();
-    		}
-    	};
-    });
-  }
-  static close() {
-    document.querySelector("#frames").style.transform = "translate(-50%,-50%) scale(0,0)";
-  }
-}
-
-window.onload = function () {
-  let canvasData = localStorage.getItem('pc-canvas-data');
-  if(canvasData){
-    data = JSON.parse(canvasData);
-    console.log(data);
-    window.colors = data.colors;
-    if(window.board == undefined){
-      window.board = new Canvas(data.width, data.height);
-    }
-    
-    let img = new Image();
-    img.setAttribute('src', data.url);
-    img.addEventListener("load", function () {
-        window.board.ctx.drawImage(img, 0, 0);
-    });
-    window.board.steps = data.steps;
-    window.board.redo_arr = data.redo_arr;
-    window.board.setcolor(data.currColor);
-  }
-  else {
-    newProject();
-  }
-  document.querySelector("#palette").innerHTML = colors.map(x => `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${x[2]})" onclick="board.setcolor([${x}]);act(this);" oncontextmenu="board.setcolor([${x}]);act(this);board.ctx.globalAlpha=+prompt('Transparency(0-1)?')"></span>`).join("\n");
-
-  document.querySelector("#palette").addEventListener("contextmenu",e=>e.preventDefault());
-}
-
-document.querySelector("#close").onclick = function () {
-  var width = +document.querySelector("#width").value;
-  var height = +document.querySelector("#height").value;
-  if(window.board == undefined){
-    window.board = new Canvas(width, height);
-  }
-  window.board.canvas.width = 10 * width;//display each pixel in 10 by 10pxs
-  window.board.canvas.height = 10 * height;
-  window.board.width = width;//Dimentions of x pixels
-  window.board.height = height;//Dimentions of Y pixels
-  window.board.canvas.style.display = "block";
-  window.board.canvas.style.height = Math.floor((height / width) * window.board.canvas.clientWidth) + "px";
-  window.board.w = +window.board.canvas.width;
-  window.board.h = +window.board.canvas.height;
-  window.board.ctx = window.board.canvas.getContext("2d");
-  window.board.ctx.fillStyle = "white";
-  window.board.ctx.globalAlpha = 1;
-  window.board.ctx.fillRect(0, 0, window.board.w, window.board.h);
-  window.board.data = [...Array(window.board.width)].map(e => Array(window.board.height).fill([255, 255, 255, 255]));
-  window.board.steps = [];
-  window.board.redo_arr = [];
-  window.board.frames = [];
-
-  window.board.setcolor([0, 0, 0, 255]);
-  window.dim.close();
-}
-
-document.querySelector(".menubtn").onclick = function () {
-  document.querySelector(".menu").style.display = document.querySelector(".menu").style.display != "block" ? "block" : "none";
-}
-
-function newProject(){
-  document.querySelector(".menu").style.display = "none";
-  localStorage.removeItem('pc-canvas-data');
-  window.dim = new Popup("#popup");
-  window.colors = [
-    [0, 0, 0, 255],
-    [127, 127, 127, 255],
-    [136, 0, 21, 255],
-    [237, 28, 36, 255],
-    [255, 127, 39, 255],
-    [255, 242, 0, 255],
-    [34, 177, 36, 255],
-    [0, 162, 232, 255],
-    [63, 72, 204, 255],
-    [163, 73, 164, 255],
-    [255, 255, 255, 255],
-    [195, 195, 195, 255],
-    [185, 122, 87, 255],
-    [255, 174, 201, 255],
-    [255, 201, 14, 255],
-    [239, 228, 176, 255],
-    [181, 230, 29, 255],
-    [153, 217, 234, 255],
-    [112, 146, 190, 255],
-    [200, 191, 231, 255]
-  ];
-}
-function filler(x, y, cc) {
-  if (x >= 0 && x < board.width && y >= 0 && y < board.height) {
-    if (JSON.stringify(board.data[x][y]) == JSON.stringify(cc) && JSON.stringify(board.data[x][y]) != JSON.stringify(board.color)) {
-      board.draw(x, y);
-      filler(x + 1, y, cc);
-      filler(x, y + 1, cc);
-      filler(x - 1, y, cc);
-      filler(x, y - 1, cc);
-    }
-  }
-}
-
-function act(clr) {
-  document.querySelectorAll("#palette .item").forEach(x => x.style.boxShadow = "");
-  clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)";
-}
-
-window.onbeforeunload = function () {
-  board.saveInLocal();
-  return "Data will be lost if you leave the page, are you sure?";
-};	
-
-var scope = {
-  scope: './'
-};
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register(
-    'sw.js',
-    scope
-  ).then(function(serviceWorker) {
-    console.log('successful');
-  }).catch(function(error) {
-    alert("error");
-  });
-} else {
-  console.log('unavailable');
-}
-
-var msg;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  msg = e;
-  // Shows the install button only when the app is installable
-  document.querySelector("#install-pwa-btn").classList.remove("display-none");
-});
-
-function install() {
-  msg.prompt();
-  msg.userChoice.then((choiceResult) => {
-    if (choiceResult.outcome === 'accepted') {
-      // Hides the install button
-      document.querySelector("#install-pwa-btn").classList.add("display-none");
-    }
-  });
-}
-
-window.onerror = function (errorMsg, url, lineNumber) {
-  alert('Error: ' + errorMsg + ' Script: ' + url + ' Line: ' + lineNumber);
-}
-</script>
+  </body>
+  <script
+    src="https://kit.fontawesome.com/473e8f3a80.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="lib/Matrix.js" async></script>
+  <script src="lib/Shapes.js" async></script>
+  <script src="lib/Transformation.js" async></script>
+  <script src="script.js"></script>
 </html>

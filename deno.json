@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "fmt": "deno fmt && npx prettier -w style.css index.html"
+  }
+}
