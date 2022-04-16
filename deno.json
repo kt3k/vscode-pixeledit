@@ -7,6 +7,7 @@
     }
   },
   "tasks": {
+    "dev": "deno run --allow-net=0.0.0.0:4507 --allow-read=. https://deno.land/std@0.135.0/http/file_server.ts",
     "fmt": "deno fmt && npx prettier -w style.css index.html"
   }
 }
