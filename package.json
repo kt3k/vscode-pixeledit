@@ -1,0 +1,41 @@
+{
+  "name": "vscode-pixeledit",
+  "version": "0.1.0",
+  "displayName": "Pixel Art Editor extension",
+  "description": "Pixel Art Editor extension",
+  "main": "./out/extension.js",
+  "publisher": "kt3k",
+  "engines": {
+    "vscode": "^1.48.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCustomEditor:kt3k.pixeledit"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "kt3k.pixeledit",
+        "displayName": "Pixeledit",
+        "selector": [
+          {
+            "filenamePattern": "*.png"
+          }
+        ]
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kt3k/vscode-pixeledit.git"
+  },
+  "author": "Yoshiya Hinosawa",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^17.0.31",
+    "@types/vscode": "^1.67.0",
+    "typescript": "^4.6.4"
+  }
+}
