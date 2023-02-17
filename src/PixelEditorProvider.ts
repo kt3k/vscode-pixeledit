@@ -194,7 +194,7 @@ export class PixelEditorProvider
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders) {
         vscode.window.showErrorMessage(
-          "Creating new Paw Draw files currently requires opening a workspace",
+          "Creating new pixeledit files currently requires opening a workspace",
         );
         return;
       }
@@ -366,7 +366,6 @@ export class PixelEditorProvider
     return document.backup(context.destination, cancellation);
   }
   #getHtmlForWebview(webview: vscode.Webview): string {
-    console.log("getHtmlForWebview");
     const script = webview.asWebviewUri(vscode.Uri.joinPath(
       this.#context.extensionUri,
       "script.js",
@@ -399,11 +398,6 @@ export class PixelEditorProvider
     <link rel="stylesheet" href="${style}" />
   </head>
   <body>
-    <div class="menubtn">☰</div>
-    <ul class="menu">
-      <li onclick="newProject()">New</li>
-      <li onclick="board.save()">Save image</li>
-    </ul>
     <div id="popup">
       <h3>Select the Dimensions Of the grid</h3>
       <input type="text" id="width" value="16" />X<input
@@ -412,23 +406,6 @@ export class PixelEditorProvider
         value="16"
       />
       <button id="close">OK</button>
-    </div>
-    <div id="frames" onblur="Frames.close()" tabindex="0">
-      <div
-        class="btn"
-        style="left: 10px"
-        onclick="document.querySelector('#frames #gallery').scrollLeft-=100;"
-      >
-        <i class="fa fa-chevron-left"></i>
-      </div>
-      <div
-        class="btn"
-        style="right: 10px"
-        onclick="document.querySelector('#frames #gallery').scrollLeft+=100;"
-      >
-        <i class="fa fa-chevron-right"></i>
-      </div>
-      <div id="gallery"></div>
     </div>
     <canvas id="canvas"></canvas>
     <div id="toolbar">

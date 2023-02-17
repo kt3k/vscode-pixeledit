@@ -8,6 +8,9 @@
   "engines": {
     "vscode": "^1.48.0"
   },
+  "scripts": {
+    "compile": "deno task compile"
+  },
   "categories": [
     "Other"
   ],

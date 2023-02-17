@@ -1,6 +1,10 @@
 // Copyright 2022 Yoshiya Hinosawa. All rights reserved. MIT license.
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
+window.addEventListener("message", (e) => {
+  console.log("got message event in pixeledit webview", e);
+});
+
 const Tool = {
   "pen": 0,
   "eraser": 1,
@@ -333,13 +337,7 @@ document.querySelector("#close").onclick = function () {
   window.dim.close();
 };
 
-document.querySelector(".menubtn").onclick = function () {
-  document.querySelector(".menu").style.display =
-    document.querySelector(".menu").style.display != "block" ? "block" : "none";
-};
-
 function newProject() {
-  document.querySelector(".menu").style.display = "none";
   localStorage.removeItem("pc-canvas-data");
   window.dim = new Popup("#popup");
   window.colors = [
