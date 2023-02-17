@@ -18,6 +18,9 @@
         "node_modules",
         "out"
       ]
+    },
+    "options": {
+      "semiColons": false
     }
   },
   "tasks": {
