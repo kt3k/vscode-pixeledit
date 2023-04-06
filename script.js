@@ -380,6 +380,341 @@ function filler(x, y, cc) {
   }
 }
 
+/** This function Multiplies two Matrices (a, b) */
+// deno-lint-ignore no-unused-vars
+function matrixMult(a, b) {
+  const aNumRows = a.length
+  const aNumCols = a[0].length
+  const bNumCols = b[0].length
+  const m = new Array(aNumRows) // initialize array of rows
+  for (let r = 0; r < aNumRows; ++r) {
+    m[r] = new Array(bNumCols) // initialize the current row
+    for (let c = 0; c < bNumCols; ++c) {
+      m[r][c] = 0 // initialize the current cell
+      for (let i = 0; i < aNumCols; ++i) {
+        m[r][c] += a[r][i] * b[i][c]
+      }
+    }
+  }
+  return m
+}
+
+/*
+ *  function Template
+ *
+ *  function Shape_name(data){
+ * 	//data -> parameters Required for the Shape
+ * 	let points = [];
+ *
+ * 	// Calculate points
+ *
+ * 	return points;
+ * }
+ *
+ * example:
+ * 	function line(x0, y0, x1, y1){
+ * 	  //x0, y0 -> Initial Points of Line
+ * 	  //x1, y1 ->  End Points of the line
+ *        let points = []
+ *
+ * 	  //Calculate points
+ *
+ * 	  return points
+ */
+
+class Point {
+  constructor(x, y) {
+    this.x = x
+    this.y = y
+  }
+  equals(point) {
+    return ((this.x == point.x) && (this.y == point.y))
+  }
+}
+
+// deno-lint-ignore no-unused-vars
+function line(p1, p2) {
+  /* this function calculates the points of the line with endpoints p1 &p2
+	 */
+  const points = []
+  const dx = Math.abs(p2.x - p1.x)
+  const sx = p1.x < p2.x ? 1 : -1
+  const dy = -Math.abs(p2.y - p1.y)
+  const sy = p1.y < p2.y ? 1 : -1
+  let err = dx + dy
+
+  let x1 = p1.x
+  let y1 = p1.y
+  while (true) {
+    points.push(new Point(x1, y1))
+    if (x1 == p2.x && y1 == p2.y) {
+      break
+    }
+    const e2 = 2 * err
+    if (e2 >= dy) {
+      err += dy
+      x1 += sx
+    }
+
+    if (e2 <= dx) {
+      err += dx
+      y1 += sy
+    }
+  }
+  return points
+}
+
+// deno-lint-ignore no-unused-vars
+function circle(r, pc) {
+  /* This function returns points of Circle with radius r and center as pc*/
+
+  let points = []
+  let x = 0
+  let y = r
+  points.push(new Point(x, y))
+  p = 1 - r
+
+  while (x <= y) {
+    //conditions
+    x++
+
+    if (p < 0) {
+      points.push(new Point(x, y))
+      p = p + (2 * x) + 1
+    } else if (p >= 0) {
+      y--
+      points.push(new Point(x, y))
+      p = p + (2 * x) + 1 - (2 * y)
+    }
+  }
+
+  points = _sym8(points)
+  for (const pt of points) {
+    pt.x += pc.x
+    pt.y += pc.y
+  }
+
+  return points
+}
+
+function _sym8(points) {
+  /* This is a helper function for circle which calculates points on all the 8 symmetries */
+  const nPoints = []
+
+  Array.prototype.push.apply(nPoints, points)
+
+  for (const p of points) {
+    nPoints.push(new Point(p.y, p.x))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(-p.y, p.x))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(-p.x, p.y))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(-p.x, -p.y))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(-p.y, -p.x))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(p.y, -p.x))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(p.x, -p.y))
+  }
+  return nPoints
+}
+
+// deno-lint-ignore no-unused-vars
+function ellipse(rx, ry, pc) {
+  /* This function return the points of the ellipse with major axis rx and minor axis ry with center pc */
+  let points = []
+  let x = 0
+  let y = ry
+  points.push(new Point(x, y))
+
+  //Region 1
+  let p1 = Math.pow(ry, 2) + (1 / 4) * Math.pow(rx, 2) - Math.pow(rx, 2) * ry
+
+  while ((2 * Math.pow(ry, 2) * x) < (2 * Math.pow(rx, 2) * y)) {
+    x++
+    console.log(x)
+    if (p1 < 0) {
+      points.push(new Point(x, y))
+      p1 = p1 + 2 * Math.pow(ry, 2) * x + Math.pow(ry, 2)
+    } else {
+      y--
+      points.push(new Point(x, y))
+      p1 = p1 + 2 * Math.pow(ry, 2) * x - 2 * Math.pow(rx, 2) * y +
+        Math.pow(ry, 2)
+    }
+  }
+
+  //Region 2
+  let x0 = points[points.length - 1].x
+  let y0 = points[points.length - 1].y
+
+  let p2 = Math.pow(ry, 2) * Math.pow(x0 + 1 / 2, 2) +
+    Math.pow(rx, 2) * Math.pow(y0 - 1, 2) - Math.pow(rx, 2) * Math.pow(ry, 2)
+
+  while (y0 >= 0) {
+    y0--
+
+    if (p2 < 0) {
+      points.push(new Point(x0, y0))
+      p2 = p2 - 2 * Math.pow(rx, 2) * y0 + Math.pow(rx, 2)
+    } else {
+      x0++
+      points.push(new Point(x0, y0))
+      p2 = p2 + 2 * Math.pow(ry, 2) * x0 - 2 * Math.pow(rx, 2) * y0 +
+        Math.pow(rx, 2)
+    }
+  }
+  points = _sym4(points)
+  for (const pt of points) {
+    pt.x += pc.x
+    pt.y += pc.y
+  }
+  return points
+}
+
+function _sym4(points) {
+  /* This is a helper function for ellipse which calculates points on all the 4 symmetries */
+  const nPoints = []
+
+  Array.prototype.push.apply(nPoints, points)
+
+  for (const p of points) {
+    nPoints.push(new Point(-p.x, p.y))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(-p.x, -p.y))
+  }
+  for (const p of points) {
+    nPoints.push(new Point(p.x, -p.y))
+  }
+  return nPoints
+}
+/*
+ *  function Template
+ *
+ *  function transformation_name(points, others){
+ * 	//points -> array of point of object
+ * 	//others -> any othee parameters the specific transformation requires
+ *
+ * 	return points;//This is the tranaformed Points
+ *  }
+ *
+ *  example:
+ *  	function translation(points, tPoint){
+ *  	  //points -> array of point of Object
+ * 	  //tPoint -> Points to be Translated
+ *
+ * 	  //Do Processing
+ *
+ * 	  return points;//This is translated points
+ * 	}
+ */
+
+// deno-lint-ignore no-unused-vars
+function translate(points, pt) {
+  /* This function translates the object to the new co-ords by pt units */
+
+  for (const p of points) {
+    const a = [
+      [p.x],
+      [p.y],
+      [1],
+    ]
+    const transMatrix = [
+      [1, 0, pt.x],
+      [0, 1, pt.y],
+      [0, 0, 1],
+    ]
+    const ans = matrixMult(transMatrix, a)
+
+    p.x = ans[0][0]
+    p.y = ans[1][0]
+  }
+  return points
+}
+
+// deno-lint-ignore no-unused-vars
+function scale(points, sx, sy, pf) {
+  /* This function Scales the object  with sx along x-axis and sy along y-axis with a fixed point pf */
+  for (const p of points) {
+    const a = [
+      [p.x],
+      [p.y],
+      [1],
+    ]
+    const scaMatrix = [
+      [sx, 0, 0],
+      [0, sy, 0],
+      [0, 0, 1],
+    ]
+
+    const transToMatrix = [
+      [1, 0, -pf.x],
+      [0, 1, -pf.y],
+      [0, 0, 1],
+    ]
+
+    const transBackMatrix = [
+      [1, 0, pf.x],
+      [0, 1, pf.y],
+      [0, 0, 1],
+    ]
+    let ans = matrixMult(transToMatrix, a)
+    ans = matrixMult(scaMatrix, ans)
+    ans = matrixMult(transBackMatrix, ans)
+
+    p.x = ans[0][0]
+    p.y = ans[1][0]
+  }
+  return points
+}
+
+// deno-lint-ignore no-unused-vars
+function rotate(points, angle, pf) {
+  /* This function rotates the object with angle with respect to fixed Point pf */
+  angle = angle * (Math.PI / 180.0)
+  for (const p of points) {
+    const a = [
+      [p.x],
+      [p.y],
+      [1],
+    ]
+    const rotMatrix = [
+      [Math.cos(angle), -Math.sin(angle), 0],
+      [Math.sin(angle), Math.cos(angle), 0],
+      [0, 0, 1],
+    ]
+
+    const transToMatrix = [
+      [1, 0, -pf.x],
+      [0, 1, -pf.y],
+      [0, 0, 1],
+    ]
+
+    const transBackMatrix = [
+      [1, 0, pf.x],
+      [0, 1, pf.y],
+      [0, 0, 1],
+    ]
+    let ans = matrixMult(transToMatrix, a)
+    ans = matrixMult(rotMatrix, ans)
+    ans = matrixMult(transBackMatrix, ans)
+
+    p.x = ans[0][0]
+    p.y = ans[1][0]
+  }
+
+  return points
+}
+
 // deno-lint-ignore no-unused-vars
 function act(clr) {
   document.querySelectorAll("#palette .item").forEach((x) =>

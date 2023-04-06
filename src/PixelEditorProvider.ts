@@ -188,6 +188,8 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
   }
 }
 
+const VIEW_TYPE = "kt3k.pixeledit";
+
 export class PixelEditorProvider
   implements vscode.CustomEditorProvider<PixelArtDocument> {
   static #newPixelEditFileId = 1
@@ -373,21 +375,6 @@ export class PixelEditorProvider
       this.#context.extensionUri,
       "script.js",
     ))
-    const scriptMatrix = webview.asWebviewUri(vscode.Uri.joinPath(
-      this.#context.extensionUri,
-      "lib",
-      "Matrix.js",
-    ))
-    const scriptShapes = webview.asWebviewUri(vscode.Uri.joinPath(
-      this.#context.extensionUri,
-      "lib",
-      "Shapes.js",
-    ))
-    const scriptTransformation = webview.asWebviewUri(vscode.Uri.joinPath(
-      this.#context.extensionUri,
-      "lib",
-      "Transformation.js",
-    ))
 
     const style = webview.asWebviewUri(vscode.Uri.joinPath(
       this.#context.extensionUri,
@@ -452,9 +439,6 @@ export class PixelEditorProvider
     src="https://kit.fontawesome.com/473e8f3a80.js"
     crossorigin="anonymous"
   ></script>
-  <script src="${scriptMatrix}" async></script>
-  <script src="${scriptShapes}" async></script>
-  <script src="${scriptTransformation}" async></script>
   <script src="${script}"></script>
 </html>`
   }
