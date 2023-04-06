@@ -1,3 +1,6 @@
+
+// deno-lint-ignore-file no-explicit-any require-await
+
 import * as vscode from "vscode"
 import { Disposable, disposeAll } from "./dispose"
 

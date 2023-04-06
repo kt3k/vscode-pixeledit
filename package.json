@@ -25,6 +25,12 @@
           }
         ]
       }
+    ],
+    "commands": [
+      {
+        "command": "kt3k.pixeledit.new",
+        "title": "Open Pixel Art Editor"
+      }
     ]
   },
   "repository": {
