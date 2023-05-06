@@ -1,8 +1,42 @@
-
 // deno-lint-ignore-file no-explicit-any require-await
 
 import * as vscode from "vscode"
-import { Disposable, disposeAll } from "./dispose"
+
+function disposeAll(disposables: vscode.Disposable[]): void {
+  while (disposables.length) {
+    const item = disposables.pop()
+    if (item) {
+      item.dispose()
+    }
+  }
+}
+
+abstract class Disposable {
+  private _isDisposed = false
+
+  protected _disposables: vscode.Disposable[] = []
+
+  public dispose() {
+    if (this._isDisposed) {
+      return
+    }
+    this._isDisposed = true
+    disposeAll(this._disposables)
+  }
+
+  protected _register<T extends vscode.Disposable>(value: T): T {
+    if (this._isDisposed) {
+      value.dispose()
+    } else {
+      this._disposables.push(value)
+    }
+    return value
+  }
+
+  protected get isDisposed(): boolean {
+    return this._isDisposed
+  }
+}
 
 interface PixelArtEdit {
   color: string
@@ -151,9 +185,7 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
     await vscode.workspace.fs.writeFile(targetResource, fileData)
   }
 
-  /**
-   * Called by VS Code when the user calls `revert` on a document.
-   */
+  /** Called by VS Code when the user calls `revert` on a document. */
   async revert(_cancellation: vscode.CancellationToken): Promise<void> {
     const diskContent = await PixelArtDocument.readFile(this.uri)
     this.#documentData = diskContent
@@ -164,11 +196,9 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
     })
   }
 
-  /**
-   * Called by VS Code to backup the edited document.
+  /** Called by VS Code to backup the edited document.
    *
-   * These backups are used to implement hot exit.
-   */
+   * These backups are used to implement hot exit. */
   async backup(
     destination: vscode.Uri,
     cancellation: vscode.CancellationToken,
@@ -187,8 +217,6 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
     }
   }
 }
-
-const VIEW_TYPE = "kt3k.pixeledit";
 
 export class PixelEditorProvider
   implements vscode.CustomEditorProvider<PixelArtDocument> {
@@ -213,12 +241,12 @@ export class PixelEditorProvider
       vscode.commands.executeCommand(
         "vscode.openWith",
         uri,
-        PixelEditorProvider.#viewType,
+        "kt3k.pixeledit",
       )
     })
 
     return vscode.window.registerCustomEditorProvider(
-      PixelEditorProvider.#viewType,
+      "kt3k.pixeledit",
       new PixelEditorProvider(context),
       {
         // For this demo extension, we enable `retainContextWhenHidden` which keeps the
@@ -231,8 +259,6 @@ export class PixelEditorProvider
       },
     )
   }
-
-  static #viewType = "kt3k.pixeledit"
 
   /** Tracks all known webviews */
   #webviews = new WebviewCollection()

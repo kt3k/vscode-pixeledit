@@ -277,8 +277,8 @@ class Popup {
 
 window.onload = function () {
   console.log("onload!!")
-  const canvasData = null
-  localStorage.getItem("pc-canvas-data")
+  //const canvasData = null
+  const canvasData = localStorage.getItem("pc-canvas-data")
   if (canvasData) {
     data = JSON.parse(canvasData)
     console.log(data)
