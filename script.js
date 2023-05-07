@@ -381,7 +381,6 @@ function filler(x, y, cc) {
 }
 
 /** This function Multiplies two Matrices (a, b) */
-// deno-lint-ignore no-unused-vars
 function matrixMult(a, b) {
   const aNumRows = a.length
   const aNumCols = a[0].length
@@ -432,7 +431,6 @@ class Point {
   }
 }
 
-// deno-lint-ignore no-unused-vars
 function line(p1, p2) {
   /* this function calculates the points of the line with endpoints p1 &p2
 	 */
@@ -464,7 +462,6 @@ function line(p1, p2) {
   return points
 }
 
-// deno-lint-ignore no-unused-vars
 function circle(r, pc) {
   /* This function returns points of Circle with radius r and center as pc*/
 
@@ -527,7 +524,6 @@ function _sym8(points) {
   return nPoints
 }
 
-// deno-lint-ignore no-unused-vars
 function ellipse(rx, ry, pc) {
   /* This function return the points of the ellipse with major axis rx and minor axis ry with center pc */
   let points = []

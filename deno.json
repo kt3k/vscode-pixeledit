@@ -5,23 +5,17 @@
         "no-window-prefix"
       ]
     },
-    "files": {
-      "exclude": [
-        "node_modules",
-        "out"
-      ]
-    }
+    "exclude": [
+      "node_modules",
+      "out"
+    ]
   },
   "fmt": {
-    "files": {
-      "exclude": [
-        "node_modules",
-        "out"
-      ]
-    },
-    "options": {
-      "semiColons": false
-    }
+    "exclude": [
+      "node_modules",
+      "out"
+    ],
+    "semiColons": false
   },
   "tasks": {
     "dev": "deno run --allow-net=0.0.0.0:4507 --allow-read=. https://deno.land/std@0.135.0/http/file_server.ts",

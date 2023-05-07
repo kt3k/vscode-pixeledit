@@ -310,9 +310,12 @@ export class PixelEditorProvider
     listeners.push(document.onDidChangeContent((e) => {
       // Update all webviews when the document changes
       for (const webviewPanel of this.#webviews.get(document.uri)) {
-        this.#postMessage(webviewPanel, "update", {
-          edits: e.edits,
-          content: e.content,
+        webviewPanel.webview.postMessage({
+          type: "update",
+          body: {
+            edits: e.edits,
+            content: e.content,
+          },
         })
       }
     }))
@@ -344,18 +347,24 @@ export class PixelEditorProvider
     webviewPanel.webview.onDidReceiveMessage((e) => {
       if (e.type === "ready") {
         if (document.uri.scheme === "untitled") {
-          this.#postMessage(webviewPanel, "init", {
-            untitled: true,
-            editable: true,
+          webviewPanel.webview.postMessage({
+            type: "init",
+            body: {
+              untitled: true,
+              editable: true,
+            },
           })
         } else {
           const editable = vscode.workspace.fs.isWritableFileSystem(
             document.uri.scheme,
           )
 
-          this.#postMessage(webviewPanel, "init", {
-            value: document.documentData,
-            editable,
+          webviewPanel.webview.postMessage({
+            type: "init",
+            body: {
+              value: document.documentData,
+              editable,
+            },
           })
         }
       }
@@ -483,14 +492,6 @@ export class PixelEditorProvider
     )
     panel.webview.postMessage({ type, requestId, body })
     return p
-  }
-
-  #postMessage(
-    panel: vscode.WebviewPanel,
-    type: string,
-    body: any,
-  ): void {
-    panel.webview.postMessage({ type, body })
   }
 
   #onMessage(document: PixelArtDocument, message: any) {
