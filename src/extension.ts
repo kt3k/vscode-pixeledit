@@ -19,16 +19,12 @@ export function activate(context: vscode.ExtensionContext) {
     )
       .with({ scheme: "untitled" })
 
-    vscode.commands.executeCommand(
-      "vscode.openWith",
-      uri,
-      "kt3k.pixeledit",
-    )
+    vscode.commands.executeCommand("vscode.openWith", uri, "kt3k.pixeledit")
   })
 
   const disposable = vscode.window.registerCustomEditorProvider(
     "kt3k.pixeledit",
-    new PixelEditorProvider(context),
+    new PixelEditorProvider(context.extensionUri),
     {
       // For this demo extension, we enable `retainContextWhenHidden` which keeps the
       // webview alive even when it is not visible. You should avoid using this setting

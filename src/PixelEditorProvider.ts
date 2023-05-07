@@ -1,6 +1,12 @@
 // deno-lint-ignore-file no-explicit-any require-await
 
 import * as vscode from "vscode"
+import {
+  type CancellationToken,
+  Uri,
+  type Webview,
+  type WebviewPanel,
+} from "vscode"
 
 function disposeAll(disposables: vscode.Disposable[]): void {
   while (disposables.length) {
@@ -45,26 +51,24 @@ interface PixelArtDocumentOptions {
 
 class PixelArtDocument extends Disposable implements vscode.CustomDocument {
   static async create(
-    uri: vscode.Uri,
+    uri: Uri,
     backupId: string | undefined,
     options: PixelArtDocumentOptions,
   ): Promise<PixelArtDocument | PromiseLike<PixelArtDocument>> {
     // If we have a backup, read that. Otherwise read the resource from the workspace
-    const dataFile = typeof backupId === "string"
-      ? vscode.Uri.parse(backupId)
-      : uri
+    const dataFile = typeof backupId === "string" ? Uri.parse(backupId) : uri
     const fileData = await PixelArtDocument.readFile(dataFile)
     return new PixelArtDocument(uri, fileData, options)
   }
 
-  static async readFile(uri: vscode.Uri): Promise<Uint8Array> {
+  static async readFile(uri: Uri): Promise<Uint8Array> {
     if (uri.scheme === "untitled") {
       return new Uint8Array()
     }
     return vscode.workspace.fs.readFile(uri)
   }
 
-  uri: vscode.Uri
+  uri: Uri
 
   #documentData: Uint8Array
   #edits: Array<PixelArtEdit> = []
@@ -73,7 +77,7 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
   #getFileData: () => Promise<Uint8Array>
 
   constructor(
-    uri: vscode.Uri,
+    uri: Uri,
     initialContent: Uint8Array,
     options: PixelArtDocumentOptions,
   ) {
@@ -146,15 +150,15 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
   }
 
   /** Called by VS Code when the user saves the document. */
-  async save(cancellation: vscode.CancellationToken): Promise<void> {
+  async save(cancellation: CancellationToken): Promise<void> {
     await this.saveAs(this.uri, cancellation)
     this.#savedEdits = Array.from(this.#edits)
   }
 
   /** Called by VS Code when the user saves the document to a new location. */
   async saveAs(
-    targetResource: vscode.Uri,
-    cancellation: vscode.CancellationToken,
+    targetResource: Uri,
+    cancellation: CancellationToken,
   ): Promise<void> {
     const fileData = await this.#getFileData()
     if (cancellation.isCancellationRequested) {
@@ -164,7 +168,7 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
   }
 
   /** Called by VS Code when the user calls `revert` on a document. */
-  async revert(_cancellation: vscode.CancellationToken): Promise<void> {
+  async revert(_cancellation: CancellationToken): Promise<void> {
     const diskContent = await PixelArtDocument.readFile(this.uri)
     this.#documentData = diskContent
     this.#edits = this.#savedEdits
@@ -178,8 +182,8 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
    *
    * These backups are used to implement hot exit. */
   async backup(
-    destination: vscode.Uri,
-    cancellation: vscode.CancellationToken,
+    destination: Uri,
+    cancellation: CancellationToken,
   ): Promise<vscode.CustomDocumentBackup> {
     await this.saveAs(destination, cancellation)
 
@@ -199,18 +203,18 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
 export class PixelEditorProvider
   implements vscode.CustomEditorProvider<PixelArtDocument> {
   #webviews = new WebviewCollection()
-  #context: vscode.ExtensionContext
+  #extensionUri: Uri
   #requestId = 1
   #callbacks = new Map<number, (response: any) => void>()
 
-  constructor(context: vscode.ExtensionContext) {
-    this.#context = context
+  constructor(uri: Uri) {
+    this.#extensionUri = uri
   }
 
   async openCustomDocument(
-    uri: vscode.Uri,
+    uri: Uri,
     openContext: { backupId?: string },
-    _token: vscode.CancellationToken,
+    _token: CancellationToken,
   ): Promise<PixelArtDocument> {
     const document: PixelArtDocument = await PixelArtDocument.create(
       uri,
@@ -265,8 +269,8 @@ export class PixelEditorProvider
 
   async resolveCustomEditor(
     document: PixelArtDocument,
-    webviewPanel: vscode.WebviewPanel,
-    _token: vscode.CancellationToken,
+    webviewPanel: WebviewPanel,
+    _token: CancellationToken,
   ): Promise<void> {
     // Add the webview to our internal set of active webviews
     this.#webviews.add(document.uri, webviewPanel)
@@ -275,7 +279,7 @@ export class PixelEditorProvider
     webviewPanel.webview.options = {
       enableScripts: true,
     }
-    webviewPanel.webview.html = this.#getHtmlForWebview(webviewPanel.webview)
+    webviewPanel.webview.html = this.#createHtml(webviewPanel.webview)
 
     webviewPanel.webview.onDidReceiveMessage((e) => {
       switch (e.type) {
@@ -288,32 +292,28 @@ export class PixelEditorProvider
           callback?.(e.body)
           return
         }
-      }
-    })
+        case "ready": {
+          if (document.uri.scheme === "untitled") {
+            webviewPanel.webview.postMessage({
+              type: "init",
+              body: {
+                untitled: true,
+                editable: true,
+              },
+            })
+          } else {
+            const editable = vscode.workspace.fs.isWritableFileSystem(
+              document.uri.scheme,
+            )
 
-    // Wait for the webview to be properly ready before we init
-    webviewPanel.webview.onDidReceiveMessage((e) => {
-      if (e.type === "ready") {
-        if (document.uri.scheme === "untitled") {
-          webviewPanel.webview.postMessage({
-            type: "init",
-            body: {
-              untitled: true,
-              editable: true,
-            },
-          })
-        } else {
-          const editable = vscode.workspace.fs.isWritableFileSystem(
-            document.uri.scheme,
-          )
-
-          webviewPanel.webview.postMessage({
-            type: "init",
-            body: {
-              value: document.documentData,
-              editable,
-            },
-          })
+            webviewPanel.webview.postMessage({
+              type: "init",
+              body: {
+                value: document.documentData,
+                editable,
+              },
+            })
+          }
         }
       }
     })
@@ -326,22 +326,22 @@ export class PixelEditorProvider
 
   saveCustomDocument(
     document: PixelArtDocument,
-    cancellation: vscode.CancellationToken,
+    cancellation: CancellationToken,
   ): Thenable<void> {
     return document.save(cancellation)
   }
 
   saveCustomDocumentAs(
     document: PixelArtDocument,
-    destination: vscode.Uri,
-    cancellation: vscode.CancellationToken,
+    destination: Uri,
+    cancellation: CancellationToken,
   ): Thenable<void> {
     return document.saveAs(destination, cancellation)
   }
 
   revertCustomDocument(
     document: PixelArtDocument,
-    cancellation: vscode.CancellationToken,
+    cancellation: CancellationToken,
   ): Thenable<void> {
     return document.revert(cancellation)
   }
@@ -349,27 +349,21 @@ export class PixelEditorProvider
   backupCustomDocument(
     document: PixelArtDocument,
     context: vscode.CustomDocumentBackupContext,
-    cancellation: vscode.CancellationToken,
+    cancellation: CancellationToken,
   ): Thenable<vscode.CustomDocumentBackup> {
     return document.backup(context.destination, cancellation)
   }
 
-  #getHtmlForWebview(webview: vscode.Webview): string {
-    const script = webview.asWebviewUri(vscode.Uri.joinPath(
-      this.#context.extensionUri,
-      "script.js",
-    ))
+  #assetPath(webview: Webview, path: string): Uri {
+    return webview.asWebviewUri(Uri.joinPath(this.#extensionUri, path))
+  }
 
-    const style = webview.asWebviewUri(vscode.Uri.joinPath(
-      this.#context.extensionUri,
-      "style.css",
-    ))
-
+  #createHtml(webview: Webview) {
     return /* html */ `
 <html>
   <head>
     <title>Pixel Edit</title>
-    <link rel="stylesheet" href="${style}" />
+    <link rel="stylesheet" href="${this.#assetPath(webview, "style.css")}" />
   </head>
   <body>
     <div id="popup">
@@ -423,18 +417,15 @@ export class PixelEditorProvider
     src="https://kit.fontawesome.com/473e8f3a80.js"
     crossorigin="anonymous"
   ></script>
-  <script src="${script}"></script>
+  <script src="${this.#assetPath(webview, "script.js")}"></script>
 </html>`
   }
 }
 
 class WebviewCollection {
-  webviews = new Set<{
-    resource: string
-    webviewPanel: vscode.WebviewPanel
-  }>()
+  webviews = new Set<{ resource: string; webviewPanel: WebviewPanel }>()
 
-  get(uri: vscode.Uri): vscode.WebviewPanel[] {
+  get(uri: Uri): WebviewPanel[] {
     const key = uri.toString()
     const panels = []
     for (const entry of this.webviews) {
@@ -445,7 +436,7 @@ class WebviewCollection {
     return panels
   }
 
-  add(uri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
+  add(uri: Uri, webviewPanel: WebviewPanel) {
     const entry = { resource: uri.toString(), webviewPanel }
     this.webviews.add(entry)
 
