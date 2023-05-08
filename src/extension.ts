@@ -1,36 +1,42 @@
-import * as vscode from "vscode"
 import {
   type CancellationToken,
   commands,
+  CustomDocument,
+  CustomDocumentBackup,
+  CustomDocumentBackupContext,
+  CustomDocumentEditEvent,
+  CustomEditorProvider,
+  type Disposable,
+  EventEmitter,
   type ExtensionContext,
   Uri,
-  type Webview,
   type WebviewPanel,
+  window,
   workspace,
 } from "vscode"
 
 let newPixelEditFileId = 1
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
-  vscode.commands.registerCommand("kt3k.pixeledit.new", () => {
-    const workspaceFolders = workspace.workspaceFolders
-    if (!workspaceFolders) {
-      vscode.window.showErrorMessage(
+  commands.registerCommand("kt3k.pixeledit.new", () => {
+    if (!workspace.workspaceFolders) {
+      window.showErrorMessage(
         "Creating new pixeledit files currently requires opening a workspace",
       )
       return
     }
 
-    const uri = Uri.joinPath(
-      workspaceFolders[0].uri,
-      `new-${newPixelEditFileId++}.png`,
+    commands.executeCommand(
+      "vscode.openWith",
+      Uri.joinPath(
+        workspace.workspaceFolders[0].uri,
+        `new-${newPixelEditFileId++}.png`,
+      ).with({ scheme: "untitled" }),
+      "kt3k.pixeledit",
     )
-      .with({ scheme: "untitled" })
-
-    commands.executeCommand("vscode.openWith", uri, "kt3k.pixeledit")
   })
 
-  const disposable = vscode.window.registerCustomEditorProvider(
+  const disposable = window.registerCustomEditorProvider(
     "kt3k.pixeledit",
     new PixelEditProvider(extensionUri),
     { supportsMultipleEditorsPerDocument: false },
@@ -38,14 +44,10 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   subscriptions.push(disposable)
 }
 
-function disposeAll(disposables: vscode.Disposable[]) {
+function disposeAll(disposables: Disposable[]) {
   while (disposables.length) {
     disposables.pop()?.dispose()
   }
-}
-
-abstract class Disposable {
-
 }
 
 interface PixelArtEdit {
@@ -53,41 +55,32 @@ interface PixelArtEdit {
   stroke: ReadonlyArray<[number, number]>
 }
 
-interface PixelEditDocumentOptions {
-  getFileData(): Promise<Uint8Array>
+async function readFile(uri: Uri): Promise<Uint8Array> {
+  return uri.scheme === "untitled"
+    ? new Uint8Array()
+    : workspace.fs.readFile(uri)
 }
 
-class PixelEditDocument extends Disposable implements vscode.CustomDocument {
-
-  static async readFile(uri: Uri): Promise<Uint8Array> {
-    if (uri.scheme === "untitled") {
-      return new Uint8Array()
-    }
-    return workspace.fs.readFile(uri)
-  }
-
-  uri: Uri
-
-  documentData: Uint8Array
+class PixelEditDocument implements CustomDocument {
+  readonly uri: Uri
+  bytes: Uint8Array
+  #isDisposed = false
+  #disposables: Disposable[] = []
   #edits: Array<PixelArtEdit> = []
   #savedEdits: Array<PixelArtEdit> = []
-
   #getFileData: () => Promise<Uint8Array>
 
   constructor(
     uri: Uri,
     initialContent: Uint8Array,
-    options: PixelEditDocumentOptions,
+    options: {
+      getFileData(): Promise<Uint8Array>
+    },
   ) {
-    super()
     this.uri = uri
-    this.documentData = initialContent
+    this.bytes = initialContent
     this.#getFileData = options.getFileData
   }
-
-  isDisposed = false
-
-  disposables: vscode.Disposable[] = []
 
   /** Called by VS Code when there are no more references to the document.
    *
@@ -95,30 +88,28 @@ class PixelEditDocument extends Disposable implements vscode.CustomDocument {
   dispose() {
     this.#onDidDispose.fire()
 
-    if (this.isDisposed) {
+    if (this.#isDisposed) {
       return
     }
-    this.isDisposed = true
-    disposeAll(this.disposables)
+    this.#isDisposed = true
+    disposeAll(this.#disposables)
   }
 
-  _register<T extends vscode.Disposable>(value: T): T {
-    if (this.isDisposed) {
+  _register<T extends Disposable>(value: T): T {
+    if (this.#isDisposed) {
       value.dispose()
     } else {
-      this.disposables.push(value)
+      this.#disposables.push(value)
     }
     return value
   }
 
-  #onDidDispose = this._register(
-    new vscode.EventEmitter<void>(),
-  )
+  #onDidDispose = this._register(new EventEmitter<void>())
   /** Fired when the document is disposed of. */
   onDidDispose = this.#onDidDispose.event
 
   #onDidChangeDocument = this._register(
-    new vscode.EventEmitter<{
+    new EventEmitter<{
       readonly content?: Uint8Array
       readonly edits: readonly PixelArtEdit[]
     }>(),
@@ -127,7 +118,7 @@ class PixelEditDocument extends Disposable implements vscode.CustomDocument {
   onDidChangeContent = this.#onDidChangeDocument.event
 
   #onDidChange = this._register(
-    new vscode.EventEmitter<{
+    new EventEmitter<{
       readonly label: string
       undo(): void
       redo(): void
@@ -181,8 +172,8 @@ class PixelEditDocument extends Disposable implements vscode.CustomDocument {
 
   /** Called by VS Code when the user calls `revert` on a document. */
   async revert(_cancellation: CancellationToken): Promise<void> {
-    const diskContent = await PixelEditDocument.readFile(this.uri)
-    this.documentData = diskContent
+    const diskContent = await readFile(this.uri)
+    this.bytes = diskContent
     this.#edits = this.#savedEdits
     this.#onDidChangeDocument.fire({
       content: diskContent,
@@ -196,7 +187,7 @@ class PixelEditDocument extends Disposable implements vscode.CustomDocument {
   async backup(
     destination: Uri,
     cancellation: CancellationToken,
-  ): Promise<vscode.CustomDocumentBackup> {
+  ): Promise<CustomDocumentBackup> {
     await this.saveAs(destination, cancellation)
 
     return {
@@ -212,8 +203,7 @@ class PixelEditDocument extends Disposable implements vscode.CustomDocument {
   }
 }
 
-class PixelEditProvider
-  implements vscode.CustomEditorProvider<PixelEditDocument> {
+class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   #webviews = new WebviewCollection()
   #uri: Uri
   #requestId = 1
@@ -229,9 +219,8 @@ class PixelEditProvider
     _token: CancellationToken,
   ): Promise<PixelEditDocument> {
     const { backupId } = openContext
-    const dataFile = typeof backupId === "string" ? Uri.parse(backupId) : uri
-    const fileData = await PixelEditDocument.readFile(dataFile)
-    const document = new PixelEditDocument(uri, fileData, {
+    const dataFile = backupId ? Uri.parse(backupId) : uri
+    const document = new PixelEditDocument(uri, await readFile(dataFile), {
       getFileData: async () => {
         const [panel] = this.#webviews.get(document.uri)
         if (!panel) {
@@ -250,7 +239,7 @@ class PixelEditProvider
       },
     })
 
-    const listeners: vscode.Disposable[] = []
+    const listeners: Disposable[] = []
 
     listeners.push(document.onDidChange((e) => {
       // Tell VS Code that the document has been edited by the use.
@@ -288,16 +277,16 @@ class PixelEditProvider
     const webview = webviewPanel.webview
 
     // Setup initial content for the webview
-    webview.options = {
-      enableScripts: true,
-    }
+    webview.options = { enableScripts: true }
+
+    const styleUri = webview.asWebviewUri(Uri.joinPath(this.#uri, "style.css"))
+    const scriptUri = webview.asWebviewUri(Uri.joinPath(this.#uri, "script.js"))
+
     webview.html = /* html */ `
     <html>
       <head>
         <title>Pixel Edit</title>
-        <link rel="stylesheet" href="${
-      webview.asWebviewUri(Uri.joinPath(this.#uri, "style.css"))
-    }" />
+        <link rel="stylesheet" href="${styleUri}" />
       </head>
       <body>
         <div id="popup">
@@ -311,39 +300,18 @@ class PixelEditProvider
         </div>
         <canvas id="canvas"></canvas>
         <div id="toolbar">
-          <span
-            class="item"
-            onclick="board.setmode(0)"
-            style="background-color: grey"
-            ><i class="fas fa-pencil-alt"></i
-          ></span>
-          <span class="item" onclick="board.setmode(1)"
-            ><i class="fas fa-eraser"></i
-          ></span>
-          <span class="item" onclick="board.setmode(2)"
-            ><i class="fas fa-fill"></i
-          ></span>
-          <span class="item" onclick="board.setmode(3)"
-            ><i class="fas fa-slash"></i
-          ></span>
-          <span class="item" onclick="board.setmode(4)"
-            ><i class="far fa-circle"></i
-          ></span>
-          <span class="item" onclick="board.setmode(5)"
-            ><i class="far fa-circle" style="transform: rotateX(45deg)"></i
-          ></span>
-          <span class="item" onclick="board.undo()"
-            ><i class="fas fa-undo"></i
-          ></span>
-          <span class="item" onclick="board.redo()"
-            ><i class="fas fa-redo"></i
-          ></span>
-          <span class="item" onclick="board.clear()"
-            ><i class="fas fa-trash"></i
-          ></span>
-          <span class="item" onclick="board.addImage()"
-            ><i class="fa fa-upload"></i
-          ></span>
+          <span class="item" onclick="board.setmode(0)" style="background-color: grey">
+            <i class="fas fa-pencil-alt"></i>
+          </span>
+          <span class="item" onclick="board.setmode(1)"><i class="fas fa-eraser"></i></span>
+          <span class="item" onclick="board.setmode(2)"><i class="fas fa-fill"></i></span>
+          <span class="item" onclick="board.setmode(3)"><i class="fas fa-slash"></i></span>
+          <span class="item" onclick="board.setmode(4)"><i class="far fa-circle"></i></span>
+          <span class="item" onclick="board.setmode(5)"><i class="far fa-circle" style="transform: rotateX(45deg)"></i></span>
+          <span class="item" onclick="board.undo()"><i class="fas fa-undo"></i></span>
+          <span class="item" onclick="board.redo()"><i class="fas fa-redo"></i></span>
+          <span class="item" onclick="board.clear()"><i class="fas fa-trash"></i></span>
+          <span class="item" onclick="board.addImage()"><i class="fa fa-upload"></i></span>
         </div>
         <div id="palette"></div>
       </body>
@@ -351,9 +319,7 @@ class PixelEditProvider
         src="https://kit.fontawesome.com/473e8f3a80.js"
         crossorigin="anonymous"
       ></script>
-      <script src="${
-      webview.asWebviewUri(Uri.joinPath(this.#uri, "script.js"))
-    }"></script>
+      <script src="${scriptUri}"></script>
     </html>`
 
     webview.onDidReceiveMessage((e) => {
@@ -363,8 +329,7 @@ class PixelEditProvider
           return
 
         case "response": {
-          const callback = this.#callbacks.get(e.requestId)
-          callback?.(e.body)
+          this.#callbacks.get(e.requestId)?.(e.body)
           return
         }
         case "ready": {
@@ -377,15 +342,13 @@ class PixelEditProvider
               },
             })
           } else {
-            const editable = workspace.fs.isWritableFileSystem(
-              document.uri.scheme,
-            )
-
             webview.postMessage({
               type: "init",
               body: {
-                value: document.documentData,
-                editable,
+                value: document.bytes,
+                editable: workspace.fs.isWritableFileSystem(
+                  document.uri.scheme,
+                ),
               },
             })
           }
@@ -394,8 +357,8 @@ class PixelEditProvider
     })
   }
 
-  #onDidChangeCustomDocument = new vscode.EventEmitter<
-    vscode.CustomDocumentEditEvent<PixelEditDocument>
+  #onDidChangeCustomDocument = new EventEmitter<
+    CustomDocumentEditEvent<PixelEditDocument>
   >()
   onDidChangeCustomDocument = this.#onDidChangeCustomDocument.event
 
@@ -423,77 +386,10 @@ class PixelEditProvider
 
   backupCustomDocument(
     document: PixelEditDocument,
-    context: vscode.CustomDocumentBackupContext,
+    context: CustomDocumentBackupContext,
     cancellation: CancellationToken,
-  ): Thenable<vscode.CustomDocumentBackup> {
+  ): Thenable<CustomDocumentBackup> {
     return document.backup(context.destination, cancellation)
-  }
-
-  #createHtml(webview: Webview) {
-    return /* html */ `
-<html>
-  <head>
-    <title>Pixel Edit</title>
-    <link rel="stylesheet" href="${
-      webview.asWebviewUri(Uri.joinPath(this.#uri, "style.css"))
-    }" />
-  </head>
-  <body>
-    <div id="popup">
-      <h3>Select the Dimensions Of the grid</h3>
-      <input type="text" id="width" value="16" />X<input
-        type="text"
-        id="height"
-        value="16"
-      />
-      <button id="close">OK</button>
-    </div>
-    <canvas id="canvas"></canvas>
-    <div id="toolbar">
-      <span
-        class="item"
-        onclick="board.setmode(0)"
-        style="background-color: grey"
-        ><i class="fas fa-pencil-alt"></i
-      ></span>
-      <span class="item" onclick="board.setmode(1)"
-        ><i class="fas fa-eraser"></i
-      ></span>
-      <span class="item" onclick="board.setmode(2)"
-        ><i class="fas fa-fill"></i
-      ></span>
-      <span class="item" onclick="board.setmode(3)"
-        ><i class="fas fa-slash"></i
-      ></span>
-      <span class="item" onclick="board.setmode(4)"
-        ><i class="far fa-circle"></i
-      ></span>
-      <span class="item" onclick="board.setmode(5)"
-        ><i class="far fa-circle" style="transform: rotateX(45deg)"></i
-      ></span>
-      <span class="item" onclick="board.undo()"
-        ><i class="fas fa-undo"></i
-      ></span>
-      <span class="item" onclick="board.redo()"
-        ><i class="fas fa-redo"></i
-      ></span>
-      <span class="item" onclick="board.clear()"
-        ><i class="fas fa-trash"></i
-      ></span>
-      <span class="item" onclick="board.addImage()"
-        ><i class="fa fa-upload"></i
-      ></span>
-    </div>
-    <div id="palette"></div>
-  </body>
-  <script
-    src="https://kit.fontawesome.com/473e8f3a80.js"
-    crossorigin="anonymous"
-  ></script>
-  <script src="${
-      webview.asWebviewUri(Uri.joinPath(this.#uri, "script.js"))
-    }"></script>
-</html>`
   }
 }
 
