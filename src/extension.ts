@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 import {
   type CancellationToken,
   commands,
+  type ExtensionContext,
   Uri,
   type Webview,
   type WebviewPanel,
@@ -10,7 +11,7 @@ import {
 
 let newPixelEditFileId = 1
 
-export function activate({ subscriptions, extensionUri }: vscode.ExtensionContext) {
+export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   vscode.commands.registerCommand("kt3k.pixeledit.new", () => {
     const workspaceFolders = workspace.workspaceFolders
     if (!workspaceFolders) {
@@ -31,35 +32,69 @@ export function activate({ subscriptions, extensionUri }: vscode.ExtensionContex
 
   const disposable = vscode.window.registerCustomEditorProvider(
     "kt3k.pixeledit",
-    new PixelEditorProvider(extensionUri),
-    {
-      // For this demo extension, we enable `retainContextWhenHidden` which keeps the
-      // webview alive even when it is not visible. You should avoid using this setting
-      // unless is absolutely required as it does have memory overhead.
-      webviewOptions: {
-        retainContextWhenHidden: true,
-      },
-      supportsMultipleEditorsPerDocument: false,
-    },
+    new PixelEditProvider(extensionUri),
+    { supportsMultipleEditorsPerDocument: false },
   )
   subscriptions.push(disposable)
 }
 
-function disposeAll(disposables: vscode.Disposable[]): void {
+function disposeAll(disposables: vscode.Disposable[]) {
   while (disposables.length) {
-    const item = disposables.pop()
-    if (item) {
-      item.dispose()
-    }
+    disposables.pop()?.dispose()
   }
 }
 
 abstract class Disposable {
+
+}
+
+interface PixelArtEdit {
+  color: string
+  stroke: ReadonlyArray<[number, number]>
+}
+
+interface PixelEditDocumentOptions {
+  getFileData(): Promise<Uint8Array>
+}
+
+class PixelEditDocument extends Disposable implements vscode.CustomDocument {
+
+  static async readFile(uri: Uri): Promise<Uint8Array> {
+    if (uri.scheme === "untitled") {
+      return new Uint8Array()
+    }
+    return workspace.fs.readFile(uri)
+  }
+
+  uri: Uri
+
+  documentData: Uint8Array
+  #edits: Array<PixelArtEdit> = []
+  #savedEdits: Array<PixelArtEdit> = []
+
+  #getFileData: () => Promise<Uint8Array>
+
+  constructor(
+    uri: Uri,
+    initialContent: Uint8Array,
+    options: PixelEditDocumentOptions,
+  ) {
+    super()
+    this.uri = uri
+    this.documentData = initialContent
+    this.#getFileData = options.getFileData
+  }
+
   isDisposed = false
 
   disposables: vscode.Disposable[] = []
 
+  /** Called by VS Code when there are no more references to the document.
+   *
+   * This happens when all editors for it have been closed. */
   dispose() {
+    this.#onDidDispose.fire()
+
     if (this.isDisposed) {
       return
     }
@@ -74,47 +109,6 @@ abstract class Disposable {
       this.disposables.push(value)
     }
     return value
-  }
-}
-
-interface PixelArtEdit {
-  color: string
-  stroke: ReadonlyArray<[number, number]>
-}
-
-interface PixelArtDocumentOptions {
-  getFileData(): Promise<Uint8Array>
-}
-
-class PixelArtDocument extends Disposable implements vscode.CustomDocument {
-  static async readFile(uri: Uri): Promise<Uint8Array> {
-    if (uri.scheme === "untitled") {
-      return new Uint8Array()
-    }
-    return vscode.workspace.fs.readFile(uri)
-  }
-
-  uri: Uri
-
-  #documentData: Uint8Array
-  #edits: Array<PixelArtEdit> = []
-  #savedEdits: Array<PixelArtEdit> = []
-
-  #getFileData: () => Promise<Uint8Array>
-
-  constructor(
-    uri: Uri,
-    initialContent: Uint8Array,
-    options: PixelArtDocumentOptions,
-  ) {
-    super()
-    this.uri = uri
-    this.#documentData = initialContent
-    this.#getFileData = options.getFileData
-  }
-
-  get documentData(): Uint8Array {
-    return this.#documentData
   }
 
   #onDidDispose = this._register(
@@ -143,14 +137,6 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
    *
    * This updates the document's dirty indicator. */
   onDidChange = this.#onDidChange.event
-
-  /** Called by VS Code when there are no more references to the document.
-   *
-   * This happens when all editors for it have been closed. */
-  dispose(): void {
-    this.#onDidDispose.fire()
-    super.dispose()
-  }
 
   /** Called when the user edits the document in a webview.
    *
@@ -190,13 +176,13 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
     if (cancellation.isCancellationRequested) {
       return
     }
-    await vscode.workspace.fs.writeFile(targetResource, fileData)
+    await workspace.fs.writeFile(targetResource, fileData)
   }
 
   /** Called by VS Code when the user calls `revert` on a document. */
   async revert(_cancellation: CancellationToken): Promise<void> {
-    const diskContent = await PixelArtDocument.readFile(this.uri)
-    this.#documentData = diskContent
+    const diskContent = await PixelEditDocument.readFile(this.uri)
+    this.documentData = diskContent
     this.#edits = this.#savedEdits
     this.#onDidChangeDocument.fire({
       content: diskContent,
@@ -217,7 +203,7 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
       id: destination.toString(),
       delete: async () => {
         try {
-          await vscode.workspace.fs.delete(destination)
+          await workspace.fs.delete(destination)
         } catch {
           // noop
         }
@@ -226,26 +212,26 @@ class PixelArtDocument extends Disposable implements vscode.CustomDocument {
   }
 }
 
-class PixelEditorProvider
-  implements vscode.CustomEditorProvider<PixelArtDocument> {
+class PixelEditProvider
+  implements vscode.CustomEditorProvider<PixelEditDocument> {
   #webviews = new WebviewCollection()
-  #extensionUri: Uri
+  #uri: Uri
   #requestId = 1
   #callbacks = new Map<number, (response: any) => void>()
 
   constructor(uri: Uri) {
-    this.#extensionUri = uri
+    this.#uri = uri
   }
 
   async openCustomDocument(
     uri: Uri,
     openContext: { backupId?: string },
     _token: CancellationToken,
-  ): Promise<PixelArtDocument> {
+  ): Promise<PixelEditDocument> {
     const { backupId } = openContext
     const dataFile = typeof backupId === "string" ? Uri.parse(backupId) : uri
-    const fileData = await PixelArtDocument.readFile(dataFile)
-    const document = new PixelArtDocument(uri, fileData, {
+    const fileData = await PixelEditDocument.readFile(dataFile)
+    const document = new PixelEditDocument(uri, fileData, {
       getFileData: async () => {
         const [panel] = this.#webviews.get(document.uri)
         if (!panel) {
@@ -293,7 +279,7 @@ class PixelEditorProvider
   }
 
   async resolveCustomEditor(
-    document: PixelArtDocument,
+    document: PixelEditDocument,
     webviewPanel: WebviewPanel,
     _token: CancellationToken,
   ): Promise<void> {
@@ -310,8 +296,8 @@ class PixelEditorProvider
       <head>
         <title>Pixel Edit</title>
         <link rel="stylesheet" href="${
-          webview.asWebviewUri(Uri.joinPath(this.#extensionUri, "style.css"))
-        }" />
+      webview.asWebviewUri(Uri.joinPath(this.#uri, "style.css"))
+    }" />
       </head>
       <body>
         <div id="popup">
@@ -366,9 +352,9 @@ class PixelEditorProvider
         crossorigin="anonymous"
       ></script>
       <script src="${
-          webview.asWebviewUri(Uri.joinPath(this.#extensionUri, "script.js"))
-        }"></script>
-    </html>`    
+      webview.asWebviewUri(Uri.joinPath(this.#uri, "script.js"))
+    }"></script>
+    </html>`
 
     webview.onDidReceiveMessage((e) => {
       switch (e.type) {
@@ -391,7 +377,7 @@ class PixelEditorProvider
               },
             })
           } else {
-            const editable = vscode.workspace.fs.isWritableFileSystem(
+            const editable = workspace.fs.isWritableFileSystem(
               document.uri.scheme,
             )
 
@@ -409,19 +395,19 @@ class PixelEditorProvider
   }
 
   #onDidChangeCustomDocument = new vscode.EventEmitter<
-    vscode.CustomDocumentEditEvent<PixelArtDocument>
+    vscode.CustomDocumentEditEvent<PixelEditDocument>
   >()
   onDidChangeCustomDocument = this.#onDidChangeCustomDocument.event
 
   saveCustomDocument(
-    document: PixelArtDocument,
+    document: PixelEditDocument,
     cancellation: CancellationToken,
   ): Thenable<void> {
     return document.save(cancellation)
   }
 
   saveCustomDocumentAs(
-    document: PixelArtDocument,
+    document: PixelEditDocument,
     destination: Uri,
     cancellation: CancellationToken,
   ): Thenable<void> {
@@ -429,14 +415,14 @@ class PixelEditorProvider
   }
 
   revertCustomDocument(
-    document: PixelArtDocument,
+    document: PixelEditDocument,
     cancellation: CancellationToken,
   ): Thenable<void> {
     return document.revert(cancellation)
   }
 
   backupCustomDocument(
-    document: PixelArtDocument,
+    document: PixelEditDocument,
     context: vscode.CustomDocumentBackupContext,
     cancellation: CancellationToken,
   ): Thenable<vscode.CustomDocumentBackup> {
@@ -449,7 +435,7 @@ class PixelEditorProvider
   <head>
     <title>Pixel Edit</title>
     <link rel="stylesheet" href="${
-      webview.asWebviewUri(Uri.joinPath(this.#extensionUri, "style.css"))
+      webview.asWebviewUri(Uri.joinPath(this.#uri, "style.css"))
     }" />
   </head>
   <body>
@@ -505,7 +491,7 @@ class PixelEditorProvider
     crossorigin="anonymous"
   ></script>
   <script src="${
-      webview.asWebviewUri(Uri.joinPath(this.#extensionUri, "script.js"))
+      webview.asWebviewUri(Uri.joinPath(this.#uri, "script.js"))
     }"></script>
 </html>`
   }
