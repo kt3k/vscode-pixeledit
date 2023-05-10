@@ -230,11 +230,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
         const p = new Promise<number[]>((resolve) =>
           this.#callbacks.set(requestId, resolve)
         )
-        panel.webview.postMessage({
-          type: "getFileData",
-          requestId,
-          body: {},
-        })
+        panel.webview.postMessage({ type: "getFileData", requestId })
         return new Uint8Array(await p)
       },
     })
