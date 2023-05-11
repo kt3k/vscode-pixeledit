@@ -15,9 +15,8 @@ import {
   workspace,
 } from "vscode"
 
-let newPixelEditFileId = 1
-
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
+  let newId = 1
   commands.registerCommand("kt3k.pixeledit.new", () => {
     if (!workspace.workspaceFolders) {
       window.showErrorMessage(
@@ -30,18 +29,18 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
       "vscode.openWith",
       Uri.joinPath(
         workspace.workspaceFolders[0].uri,
-        `new-${newPixelEditFileId++}.png`,
+        `new-${newId++}.png`,
       ).with({ scheme: "untitled" }),
       "kt3k.pixeledit",
     )
   })
 
-  const disposable = window.registerCustomEditorProvider(
-    "kt3k.pixeledit",
-    new PixelEditProvider(extensionUri),
-    { supportsMultipleEditorsPerDocument: false },
+  subscriptions.push(
+    window.registerCustomEditorProvider(
+      "kt3k.pixeledit",
+      new PixelEditProvider(extensionUri),
+    ),
   )
-  subscriptions.push(disposable)
 }
 
 function disposeAll(disposables: Disposable[]) {
@@ -50,7 +49,7 @@ function disposeAll(disposables: Disposable[]) {
   }
 }
 
-interface PixelArtEdit {
+interface DocEdit {
   color: string
   stroke: ReadonlyArray<[number, number]>
 }
@@ -66,20 +65,18 @@ class PixelEditDocument implements CustomDocument {
   bytes: Uint8Array
   #isDisposed = false
   #disposables: Disposable[] = []
-  #edits: Array<PixelArtEdit> = []
-  #savedEdits: Array<PixelArtEdit> = []
-  #getFileData: () => Promise<Uint8Array>
+  #edits: Array<DocEdit> = []
+  #savedEdits: Array<DocEdit> = []
+  #delegate: PixelEditProvider
 
   constructor(
     uri: Uri,
-    initialContent: Uint8Array,
-    options: {
-      getFileData(): Promise<Uint8Array>
-    },
+    bytes: Uint8Array,
+    delegate: PixelEditProvider,
   ) {
     this.uri = uri
-    this.bytes = initialContent
-    this.#getFileData = options.getFileData
+    this.bytes = bytes
+    this.#delegate = delegate
   }
 
   /** Called by VS Code when there are no more references to the document.
@@ -111,7 +108,7 @@ class PixelEditDocument implements CustomDocument {
   #onDidChangeDocument = this._register(
     new EventEmitter<{
       readonly content?: Uint8Array
-      readonly edits: readonly PixelArtEdit[]
+      readonly edits: readonly DocEdit[]
     }>(),
   )
   /** Fired to notify webviews that the document has changed. */
@@ -132,7 +129,7 @@ class PixelEditDocument implements CustomDocument {
   /** Called when the user edits the document in a webview.
    *
    * This fires an event to notify VS Code that the document has been edited. */
-  makeEdit(edit: PixelArtEdit) {
+  makeEdit(edit: DocEdit) {
     this.#edits.push(edit)
 
     this.#onDidChange.fire({
@@ -153,25 +150,13 @@ class PixelEditDocument implements CustomDocument {
   }
 
   /** Called by VS Code when the user saves the document. */
-  async save(cancellation: CancellationToken): Promise<void> {
-    await this.saveAs(this.uri, cancellation)
+  async save(cancel: CancellationToken): Promise<void> {
+    await this.#delegate.saveCustomDocumentAs(this, this.uri, cancel)
     this.#savedEdits = Array.from(this.#edits)
   }
 
-  /** Called by VS Code when the user saves the document to a new location. */
-  async saveAs(
-    targetResource: Uri,
-    cancellation: CancellationToken,
-  ): Promise<void> {
-    const fileData = await this.#getFileData()
-    if (cancellation.isCancellationRequested) {
-      return
-    }
-    await workspace.fs.writeFile(targetResource, fileData)
-  }
-
   /** Called by VS Code when the user calls `revert` on a document. */
-  async revert(_cancellation: CancellationToken): Promise<void> {
+  async revert(_cancel: CancellationToken): Promise<void> {
     const diskContent = await readFile(this.uri)
     this.bytes = diskContent
     this.#edits = this.#savedEdits
@@ -185,16 +170,16 @@ class PixelEditDocument implements CustomDocument {
    *
    * These backups are used to implement hot exit. */
   async backup(
-    destination: Uri,
-    cancellation: CancellationToken,
+    dest: Uri,
+    cancel: CancellationToken,
   ): Promise<CustomDocumentBackup> {
-    await this.saveAs(destination, cancellation)
+    await this.#delegate.saveCustomDocumentAs(this, dest, cancel)
 
     return {
-      id: destination.toString(),
+      id: dest.toString(),
       delete: async () => {
         try {
-          await workspace.fs.delete(destination)
+          await workspace.fs.delete(dest)
         } catch {
           // noop
         }
@@ -204,13 +189,42 @@ class PixelEditDocument implements CustomDocument {
 }
 
 class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
-  #webviews = new WebviewCollection()
   #uri: Uri
   #requestId = 1
   #callbacks = new Map<number, (response: number[]) => void>()
+  #webviews = new Set<{ key: string; webviewPanel: WebviewPanel }>()
 
   constructor(uri: Uri) {
     this.#uri = uri
+  }
+
+  #getWebviews(uri: Uri): WebviewPanel[] {
+    const key = uri.toString()
+    return [...this.#webviews]
+      .filter((entry) => entry.key === key)
+      .map((entry) => entry.webviewPanel)
+  }
+
+  #addWebview(uri: Uri, webviewPanel: WebviewPanel) {
+    const entry = { key: uri.toString(), webviewPanel }
+    this.#webviews.add(entry)
+
+    webviewPanel.onDidDispose(() => {
+      this.#webviews.delete(entry)
+    })
+  }
+
+  async getBytesFromUi(uri: Uri) {
+    const [panel] = this.#getWebviews(uri)
+    if (!panel) {
+      throw new Error("Could not find webview to request bytes for")
+    }
+    const requestId = this.#requestId++
+    const p = new Promise<number[]>((resolve) =>
+      this.#callbacks.set(requestId, resolve)
+    )
+    panel.webview.postMessage({ type: "getBytes", requestId })
+    return new Uint8Array(await p)
   }
 
   async openCustomDocument(
@@ -220,20 +234,11 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   ): Promise<PixelEditDocument> {
     const { backupId } = openContext
     const dataFile = backupId ? Uri.parse(backupId) : uri
-    const document = new PixelEditDocument(uri, await readFile(dataFile), {
-      getFileData: async () => {
-        const [panel] = this.#webviews.get(document.uri)
-        if (!panel) {
-          throw new Error("Could not find webview to save for")
-        }
-        const requestId = this.#requestId++
-        const p = new Promise<number[]>((resolve) =>
-          this.#callbacks.set(requestId, resolve)
-        )
-        panel.webview.postMessage({ type: "getFileData", requestId })
-        return new Uint8Array(await p)
-      },
-    })
+    const document: PixelEditDocument = new PixelEditDocument(
+      uri,
+      await readFile(dataFile),
+      this,
+    )
 
     const listeners: Disposable[] = []
 
@@ -247,7 +252,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
 
     listeners.push(document.onDidChangeContent((e) => {
       // Update all webviews when the document changes
-      for (const webviewPanel of this.#webviews.get(document.uri)) {
+      for (const webviewPanel of this.#getWebviews(document.uri)) {
         webviewPanel.webview.postMessage({
           type: "update",
           body: {
@@ -269,7 +274,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     _token: CancellationToken,
   ) {
     // Add the webview to our internal set of active webviews
-    this.#webviews.add(document.uri, webviewPanel)
+    this.#addWebview(document.uri, webviewPanel)
     const webview = webviewPanel.webview
 
     // Setup initial content for the webview
@@ -320,7 +325,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     webview.onDidReceiveMessage((e) => {
       switch (e.type) {
         case "stroke":
-          document.makeEdit(e as PixelArtEdit)
+          document.makeEdit(e as DocEdit)
           return
 
         case "response": {
@@ -364,51 +369,31 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     return document.save(cancellation)
   }
 
-  saveCustomDocumentAs(
-    document: PixelEditDocument,
-    destination: Uri,
-    cancellation: CancellationToken,
-  ): Thenable<void> {
-    return document.saveAs(destination, cancellation)
+  async saveCustomDocumentAs(
+    doc: PixelEditDocument,
+    dest: Uri,
+    cancel: CancellationToken,
+  ) {
+    const fileData = await this.getBytesFromUi(doc.uri)
+    if (cancel.isCancellationRequested) {
+      return
+    }
+    await workspace.fs.writeFile(dest, fileData)
   }
 
   revertCustomDocument(
-    document: PixelEditDocument,
-    cancellation: CancellationToken,
+    doc: PixelEditDocument,
+    cancel: CancellationToken,
   ): Thenable<void> {
-    return document.revert(cancellation)
+    return doc.revert(cancel)
   }
 
   backupCustomDocument(
-    document: PixelEditDocument,
-    context: CustomDocumentBackupContext,
-    cancellation: CancellationToken,
+    doc: PixelEditDocument,
+    ctx: CustomDocumentBackupContext,
+    cancel: CancellationToken,
   ): Thenable<CustomDocumentBackup> {
-    return document.backup(context.destination, cancellation)
-  }
-}
-
-class WebviewCollection {
-  webviews = new Set<{ resource: string; webviewPanel: WebviewPanel }>()
-
-  get(uri: Uri): WebviewPanel[] {
-    const key = uri.toString()
-    const panels = []
-    for (const entry of this.webviews) {
-      if (entry.resource === key) {
-        panels.push(entry.webviewPanel)
-      }
-    }
-    return panels
-  }
-
-  add(uri: Uri, webviewPanel: WebviewPanel) {
-    const entry = { resource: uri.toString(), webviewPanel }
-    this.webviews.add(entry)
-
-    webviewPanel.onDidDispose(() => {
-      this.webviews.delete(entry)
-    })
+    return doc.backup(ctx.destination, cancel)
   }
 }
 
