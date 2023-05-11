@@ -1,6 +1,5 @@
 # vscode-pixeledit (WIP)
 
-This project is a fork of [PixelCraft](https://github.com/rgab1508/PixelCraft)
+Pixel art editor for vscode.
 
-This will be an vscode extension for editing pixel art png file, but it's not
-working yet.
+The editor UI is forked from [PixelCraft](https://github.com/rgab1508/PixelCraft)
