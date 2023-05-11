@@ -9,7 +9,7 @@
     "vscode": "^1.48.0"
   },
   "scripts": {
-    "build": "tsc -p ./"
+    "build": "tsc -p ./ && mkdir -p ./sandbox && cp nodejs.png ./sandbox/"
   },
   "categories": [
     "Other"
