@@ -2,11 +2,9 @@ import {
   type CancellationToken,
   commands,
   CustomDocument,
-  CustomDocumentBackup,
   CustomDocumentBackupContext,
   CustomDocumentEditEvent,
   CustomEditorProvider,
-  type Disposable,
   EventEmitter,
   type ExtensionContext,
   Uri,
@@ -43,12 +41,6 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   )
 }
 
-function disposeAll(disposables: Disposable[]) {
-  while (disposables.length) {
-    disposables.pop()?.dispose()
-  }
-}
-
 interface DocEdit {
   color: string
   stroke: ReadonlyArray<[number, number]>
@@ -63,20 +55,12 @@ async function readFile(uri: Uri): Promise<Uint8Array> {
 class PixelEditDocument implements CustomDocument {
   readonly uri: Uri
   bytes: Uint8Array
-  #isDisposed = false
-  #disposables: Disposable[] = []
   #edits: Array<DocEdit> = []
   #savedEdits: Array<DocEdit> = []
-  #delegate: PixelEditProvider
 
-  constructor(
-    uri: Uri,
-    bytes: Uint8Array,
-    delegate: PixelEditProvider,
-  ) {
+  constructor(uri: Uri, bytes: Uint8Array) {
     this.uri = uri
     this.bytes = bytes
-    this.#delegate = delegate
   }
 
   /** Called by VS Code when there are no more references to the document.
@@ -84,43 +68,27 @@ class PixelEditDocument implements CustomDocument {
    * This happens when all editors for it have been closed. */
   dispose() {
     this.#onDidDispose.fire()
-
-    if (this.#isDisposed) {
-      return
-    }
-    this.#isDisposed = true
-    disposeAll(this.#disposables)
+    this.#onDidDispose.dispose()
+    this.#onDidChangeContent.dispose()
+    this.#onDidChange.dispose()
   }
 
-  _register<T extends Disposable>(value: T): T {
-    if (this.#isDisposed) {
-      value.dispose()
-    } else {
-      this.#disposables.push(value)
-    }
-    return value
-  }
-
-  #onDidDispose = this._register(new EventEmitter<void>())
+  #onDidDispose = new EventEmitter<void>()
   /** Fired when the document is disposed of. */
   onDidDispose = this.#onDidDispose.event
 
-  #onDidChangeDocument = this._register(
-    new EventEmitter<{
-      readonly content?: Uint8Array
-      readonly edits: readonly DocEdit[]
-    }>(),
-  )
+  #onDidChangeContent = new EventEmitter<{
+    readonly content?: Uint8Array
+    readonly edits: readonly DocEdit[]
+  }>()
   /** Fired to notify webviews that the document has changed. */
-  onDidChangeContent = this.#onDidChangeDocument.event
+  onDidChangeContent = this.#onDidChangeContent.event
 
-  #onDidChange = this._register(
-    new EventEmitter<{
-      readonly label: string
-      undo(): void
-      redo(): void
-    }>(),
-  )
+  #onDidChange = new EventEmitter<{
+    readonly label: string
+    undo(): void
+    redo(): void
+  }>()
   /** Fired to tell VS Code that an edit has occurred in the document.
    *
    * This updates the document's dirty indicator. */
@@ -136,55 +104,30 @@ class PixelEditDocument implements CustomDocument {
       label: "Stroke",
       undo: () => {
         this.#edits.pop()
-        this.#onDidChangeDocument.fire({
+        this.#onDidChangeContent.fire({
           edits: this.#edits,
         })
       },
       redo: () => {
         this.#edits.push(edit)
-        this.#onDidChangeDocument.fire({
+        this.#onDidChangeContent.fire({
           edits: this.#edits,
         })
       },
     })
   }
 
-  /** Called by VS Code when the user saves the document. */
-  async save(cancel: CancellationToken): Promise<void> {
-    await this.#delegate.saveCustomDocumentAs(this, this.uri, cancel)
+  onSave() {
     this.#savedEdits = Array.from(this.#edits)
   }
 
-  /** Called by VS Code when the user calls `revert` on a document. */
-  async revert(_cancel: CancellationToken): Promise<void> {
-    const diskContent = await readFile(this.uri)
-    this.bytes = diskContent
+  async revert() {
+    this.bytes = await readFile(this.uri)
     this.#edits = this.#savedEdits
-    this.#onDidChangeDocument.fire({
-      content: diskContent,
+    this.#onDidChangeContent.fire({
+      content: this.bytes,
       edits: this.#edits,
     })
-  }
-
-  /** Called by VS Code to backup the edited document.
-   *
-   * These backups are used to implement hot exit. */
-  async backup(
-    dest: Uri,
-    cancel: CancellationToken,
-  ): Promise<CustomDocumentBackup> {
-    await this.#delegate.saveCustomDocumentAs(this, dest, cancel)
-
-    return {
-      id: dest.toString(),
-      delete: async () => {
-        try {
-          await workspace.fs.delete(dest)
-        } catch {
-          // noop
-        }
-      },
-    }
   }
 }
 
@@ -214,7 +157,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     })
   }
 
-  async getBytesFromUi(uri: Uri) {
+  async #getBytesFromUi(uri: Uri) {
     const [panel] = this.#getWebviews(uri)
     if (!panel) {
       throw new Error("Could not find webview to request bytes for")
@@ -229,30 +172,21 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
 
   async openCustomDocument(
     uri: Uri,
-    openContext: { backupId?: string },
+    { backupId }: { backupId?: string },
     _token: CancellationToken,
   ): Promise<PixelEditDocument> {
-    const { backupId } = openContext
-    const dataFile = backupId ? Uri.parse(backupId) : uri
-    const document: PixelEditDocument = new PixelEditDocument(
-      uri,
-      await readFile(dataFile),
-      this,
-    )
-
-    const listeners: Disposable[] = []
-
-    listeners.push(document.onDidChange((e) => {
+    const bytes = await readFile(backupId ? Uri.parse(backupId) : uri)
+    const doc = new PixelEditDocument(uri, bytes)
+    const changeListener = doc.onDidChange((e) => {
       // Tell VS Code that the document has been edited by the use.
       this.#onDidChangeCustomDocument.fire({
-        document,
+        document: doc,
         ...e,
       })
-    }))
-
-    listeners.push(document.onDidChangeContent((e) => {
+    })
+    const changeContentListener = doc.onDidChangeContent((e) => {
       // Update all webviews when the document changes
-      for (const webviewPanel of this.#getWebviews(document.uri)) {
+      for (const webviewPanel of this.#getWebviews(doc.uri)) {
         webviewPanel.webview.postMessage({
           type: "update",
           body: {
@@ -261,11 +195,12 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
           },
         })
       }
-    }))
-
-    document.onDidDispose(() => disposeAll(listeners))
-
-    return document
+    })
+    doc.onDidDispose(() => {
+      changeListener.dispose()
+      changeContentListener.dispose()
+    })
+    return doc
   }
 
   resolveCustomEditor(
@@ -324,7 +259,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
 
     webview.onDidReceiveMessage((e) => {
       switch (e.type) {
-        case "stroke":
+        case "edit":
           document.makeEdit(e as DocEdit)
           return
 
@@ -362,11 +297,12 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   >()
   onDidChangeCustomDocument = this.#onDidChangeCustomDocument.event
 
-  saveCustomDocument(
+  async saveCustomDocument(
     document: PixelEditDocument,
-    cancellation: CancellationToken,
-  ): Thenable<void> {
-    return document.save(cancellation)
+    cancel: CancellationToken,
+  ) {
+    await this.saveCustomDocumentAs(document, document.uri, cancel)
+    document.onSave()
   }
 
   async saveCustomDocumentAs(
@@ -374,26 +310,35 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     dest: Uri,
     cancel: CancellationToken,
   ) {
-    const fileData = await this.getBytesFromUi(doc.uri)
+    const fileData = await this.#getBytesFromUi(doc.uri)
     if (cancel.isCancellationRequested) {
       return
     }
     await workspace.fs.writeFile(dest, fileData)
   }
 
-  revertCustomDocument(
-    doc: PixelEditDocument,
-    cancel: CancellationToken,
-  ): Thenable<void> {
-    return doc.revert(cancel)
+  async revertCustomDocument(doc: PixelEditDocument) {
+    await doc.revert()
   }
 
-  backupCustomDocument(
+  async backupCustomDocument(
     doc: PixelEditDocument,
     ctx: CustomDocumentBackupContext,
     cancel: CancellationToken,
-  ): Thenable<CustomDocumentBackup> {
-    return doc.backup(ctx.destination, cancel)
+  ) {
+    const dest = ctx.destination
+    await this.saveCustomDocumentAs(doc, dest, cancel)
+
+    return {
+      id: dest.toString(),
+      delete: async () => {
+        try {
+          await workspace.fs.delete(dest)
+        } catch {
+          // noop
+        }
+      },
+    }
   }
 }
 
