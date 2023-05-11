@@ -1,10 +1,6 @@
 // Copyright 2022 Yoshiya Hinosawa. All rights reserved. MIT license.
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
-window.addEventListener("message", (e) => {
-  console.log("got message event in pixeledit webview", e)
-})
-
 const Tool = {
   "pen": 0,
   "eraser": 1,
@@ -719,11 +715,15 @@ function act(clr) {
   clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
 }
 
-window.onbeforeunload = function () {
+globalThis.onbeforeunload = function () {
   board.saveInLocal()
   return "Data will be lost if you leave the page, are you sure?"
 }
 
-window.onerror = function (errorMsg, url, lineNumber) {
+globalThis.onerror = function (errorMsg, url, lineNumber) {
   alert("Error: " + errorMsg + " Script: " + url + " Line: " + lineNumber)
 }
+
+globalThis.addEventListener("message", (e) => {
+  console.log("got message event in pixeledit webview", e)
+})

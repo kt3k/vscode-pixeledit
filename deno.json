@@ -1,18 +1,11 @@
 {
   "lint": {
-    "rules": {
-      "exclude": [
-        "no-window-prefix"
-      ]
-    },
     "exclude": [
-      "node_modules",
       "out"
     ]
   },
   "fmt": {
     "exclude": [
-      "node_modules",
       "out"
     ],
     "semiColons": false

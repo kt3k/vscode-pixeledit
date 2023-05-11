@@ -58,7 +58,7 @@ interface PixelArtEdit {
 async function readFile(uri: Uri): Promise<Uint8Array> {
   return uri.scheme === "untitled"
     ? new Uint8Array()
-    : workspace.fs.readFile(uri)
+    : await workspace.fs.readFile(uri)
 }
 
 class PixelEditDocument implements CustomDocument {
@@ -137,13 +137,13 @@ class PixelEditDocument implements CustomDocument {
 
     this.#onDidChange.fire({
       label: "Stroke",
-      undo: async () => {
+      undo: () => {
         this.#edits.pop()
         this.#onDidChangeDocument.fire({
           edits: this.#edits,
         })
       },
-      redo: async () => {
+      redo: () => {
         this.#edits.push(edit)
         this.#onDidChangeDocument.fire({
           edits: this.#edits,
@@ -207,7 +207,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   #webviews = new WebviewCollection()
   #uri: Uri
   #requestId = 1
-  #callbacks = new Map<number, (response: any) => void>()
+  #callbacks = new Map<number, (response: number[]) => void>()
 
   constructor(uri: Uri) {
     this.#uri = uri
@@ -263,11 +263,11 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     return document
   }
 
-  async resolveCustomEditor(
+  resolveCustomEditor(
     document: PixelEditDocument,
     webviewPanel: WebviewPanel,
     _token: CancellationToken,
-  ): Promise<void> {
+  ) {
     // Add the webview to our internal set of active webviews
     this.#webviews.add(document.uri, webviewPanel)
     const webview = webviewPanel.webview
