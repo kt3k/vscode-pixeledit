@@ -3,14 +3,13 @@
   "version": "0.1.0",
   "displayName": "Pixel Art Editor extension",
   "description": "Pixel Art Editor extension",
-  "main": "./out/ext.js",
+  "main": "./out/src/ext.js",
   "publisher": "kt3k",
   "engines": {
     "vscode": "^1.48.0"
   },
   "scripts": {
-    "build": "tsc -p ./ && npm run sandbox",
-    "sandbox": "rm -rf sandbox && mkdir -p ./sandbox && cp .github/nodejs.png ./sandbox/"
+    "build": "tsc -p ./"
   },
   "categories": [
     "Other"

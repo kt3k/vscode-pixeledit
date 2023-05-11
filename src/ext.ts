@@ -274,7 +274,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
 
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
-    const scriptUri = webview.asWebviewUri(Uri.joinPath(this.#uri, "edit.js"))
+    const scriptUri = webview.asWebviewUri(Uri.joinPath(this.#uri, "src/edit.js"))
     webview.html = /* html */ `
     <html>
       <head>
