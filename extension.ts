@@ -274,15 +274,12 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
 
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
-
-    const styleUri = webview.asWebviewUri(Uri.joinPath(this.#uri, "style.css"))
     const scriptUri = webview.asWebviewUri(Uri.joinPath(this.#uri, "script.js"))
-
     webview.html = /* html */ `
     <html>
       <head>
         <title>Pixel Edit</title>
-        <link rel="stylesheet" href="${styleUri}" />
+        <style>${style}</style>
       </head>
       <body>
         <div id="popup">
@@ -412,3 +409,239 @@ class WebviewCollection {
     })
   }
 }
+
+const style = /* css */ `
+body {
+  background-color: #232125;
+  margin: 0px;
+}
+
+#popup,
+#frames {
+  background-color: #332f35;
+  color: white;
+  font-size: 20px;
+  padding: 30px;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.1, 0.1);
+  text-align: center;
+  max-width: 420px;
+  width: 70%;
+  transition: 0.2s all;
+  z-index: 2;
+  border-radius: 5px;
+}
+#popup {
+  display: none;
+}
+#popup h3 {
+  line-height: 30px;
+}
+
+#frames {
+  display: none;
+  padding: 10px;
+}
+
+#frames #gallery {
+  padding: 10px 10px 10px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+}
+
+#frames .btn {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: black;
+  font-size: 20px;
+  padding: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+}
+
+#frames img {
+  width: 100px;
+  margin: 10px;
+}
+
+#width,
+#height {
+  background-color: #262327;
+  color: white;
+  margin: 10px;
+  padding: 5px;
+  font-size: 14px;
+  font-weight: bolder;
+  border: none;
+  border-radius: 3px;
+  max-width: 60px;
+}
+
+#close {
+  background-color: #262327;
+  color: white;
+  margin: 15px auto 5px auto;
+  padding: 5px 10px 5px 10px;
+  font-size: 18px;
+  font-weight: bolder;
+  display: block;
+  border: none;
+  border-radius: 3px;
+  max-width: 60px;
+  transition: 0.2s all;
+}
+
+#close:hover {
+  box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.5);
+}
+
+#canvas {
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 75%;
+  max-width: 550px;
+  display: none;
+  cursor: crosshair;
+  touch-action: none;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#toolbar {
+  position: fixed;
+  top: 50%;
+  left: 0%;
+  transform: translateY(-50%);
+  padding: 0px;
+  color: white;
+  max-width: 150px;
+}
+
+#toolbar .item {
+  display: inline-block;
+  float: left;
+  padding: 15px;
+  border: 1px solid #fff;
+  cursor: pointer;
+  height: 32px;
+  width: 32px;
+  font-family: Arial, FontAwesome;
+  font-size: 24px;
+}
+
+#palette {
+  position: fixed;
+  top: 50%;
+  right: 0%;
+  transform: translateY(-50%);
+  padding: 0px;
+  color: white;
+  max-width: 100px;
+}
+
+#palette .item {
+  display: inline-block;
+  float: left;
+  padding: 25px;
+  cursor: pointer;
+}
+
+path {
+  fill: white;
+}
+
+.display-none {
+  display: none;
+}
+
+.item:hover {
+  background-color: grey;
+}
+
+.menubtn {
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
+  background-color: #332f35;
+  color: white;
+  padding: 5px 15px 5px 15px;
+  border-radius: 5px;
+  font-size: 25px;
+  font-weight: bolder;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.menu {
+  position: fixed;
+  top: 70px;
+  left: 20px;
+  border-radius: 5px;
+  padding: 0px;
+  color: white;
+  z-index: 3;
+  display: none;
+}
+
+.menu li {
+  padding: 5px 20px 5px 20px;
+  list-style: none;
+  background-color: #332f35;
+  cursor: pointer;
+}
+
+.menu li i {
+  padding-right: 10px;
+}
+
+.menu li a {
+  text-decoration: none;
+  color: white;
+}
+
+@media only screen and (max-width: 600px) {
+  #toolbar {
+    position: fixed;
+    top: 100%;
+    left: 50%;
+    min-width: 100%;
+    transform: translate(-50%, -100%);
+    padding: 0px;
+    color: white;
+  }
+  #palette {
+    position: fixed;
+    top: 0%;
+    transform: translateY(0%);
+    min-width: 100%;
+    padding: 0px;
+    color: white;
+  }
+  #toolbar .item {
+    width: 20px;
+    height: 20px;
+  }
+  #palette .item {
+    padding: 15px;
+  }
+  .menubtn {
+    top: 70px;
+  }
+  .menu {
+    top: 110px;
+  }
+}
+`
