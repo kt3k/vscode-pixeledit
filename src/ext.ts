@@ -67,15 +67,9 @@ class PixelEditDocument implements CustomDocument {
    *
    * This happens when all editors for it have been closed. */
   dispose() {
-    this.#onDidDispose.fire()
-    this.#onDidDispose.dispose()
     this.#onDidChangeContent.dispose()
     this.#onDidChange.dispose()
   }
-
-  #onDidDispose = new EventEmitter<void>()
-  /** Fired when the document is disposed of. */
-  onDidDispose = this.#onDidDispose.event
 
   #onDidChangeContent = new EventEmitter<{
     readonly content?: Uint8Array
@@ -177,14 +171,14 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   ): Promise<PixelEditDocument> {
     const bytes = await readFile(backupId ? Uri.parse(backupId) : uri)
     const doc = new PixelEditDocument(uri, bytes)
-    const changeListener = doc.onDidChange((e) => {
+    doc.onDidChange((e) => {
       // Tell VS Code that the document has been edited by the use.
       this.#onDidChangeCustomDocument.fire({
         document: doc,
         ...e,
       })
     })
-    const changeContentListener = doc.onDidChangeContent((e) => {
+    doc.onDidChangeContent((e) => {
       // Update all webviews when the document changes
       for (const webviewPanel of this.#getWebviews(doc.uri)) {
         webviewPanel.webview.postMessage({
@@ -195,10 +189,6 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
           },
         })
       }
-    })
-    doc.onDidDispose(() => {
-      changeListener.dispose()
-      changeContentListener.dispose()
     })
     return doc
   }
