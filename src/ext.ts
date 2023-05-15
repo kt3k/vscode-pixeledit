@@ -8,6 +8,7 @@ import {
   EventEmitter,
   type ExtensionContext,
   Uri,
+  type Webview,
   type WebviewPanel,
   window,
   workspace,
@@ -36,12 +37,12 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   subscriptions.push(
     window.registerCustomEditorProvider(
       "kt3k.pixeledit",
-      new PixelEditProvider(extensionUri),
+      new PixelEdit(extensionUri),
     ),
   )
 }
 
-interface DocEdit {
+interface Edit {
   color: string
   stroke: ReadonlyArray<[number, number]>
 }
@@ -53,114 +54,47 @@ async function readFile(uri: Uri): Promise<Uint8Array> {
 }
 
 class PixelEditDocument implements CustomDocument {
-  readonly uri: Uri
-  bytes: Uint8Array
-  #edits: Array<DocEdit> = []
-  #savedEdits: Array<DocEdit> = []
+  #edits: Edit[] = []
+  #savedEdits: Edit[] = []
 
-  constructor(uri: Uri, bytes: Uint8Array) {
-    this.uri = uri
-    this.bytes = bytes
-  }
+  constructor(public readonly uri: Uri, public bytes: Uint8Array) {}
 
-  /** Called by VS Code when there are no more references to the document.
-   *
-   * This happens when all editors for it have been closed. */
-  dispose() {
-    this.#onDidChangeContent.dispose()
-    this.#onDidChange.dispose()
-  }
+  dispose() {}
 
-  #onDidChangeContent = new EventEmitter<{
-    readonly content?: Uint8Array
-    readonly edits: readonly DocEdit[]
-  }>()
-  /** Fired to notify webviews that the document has changed. */
-  onDidChangeContent = this.#onDidChangeContent.event
-
-  #onDidChange = new EventEmitter<{
-    readonly label: string
-    undo(): void
-    redo(): void
-  }>()
-  /** Fired to tell VS Code that an edit has occurred in the document.
-   *
-   * This updates the document's dirty indicator. */
-  onDidChange = this.#onDidChange.event
-
-  /** Called when the user edits the document in a webview.
-   *
-   * This fires an event to notify VS Code that the document has been edited. */
-  makeEdit(edit: DocEdit) {
-    this.#edits.push(edit)
-
-    this.#onDidChange.fire({
-      label: "Stroke",
-      undo: () => {
-        this.#edits.pop()
-        this.#onDidChangeContent.fire({
-          edits: this.#edits,
-        })
-      },
-      redo: () => {
-        this.#edits.push(edit)
-        this.#onDidChangeContent.fire({
-          edits: this.#edits,
-        })
-      },
-    })
+  get edits() {
+    return this.#edits
   }
 
   onSave() {
-    this.#savedEdits = Array.from(this.#edits)
+    this.#savedEdits = [...this.#edits]
   }
 
-  async revert() {
-    this.bytes = await readFile(this.uri)
-    this.#edits = this.#savedEdits
-    this.#onDidChangeContent.fire({
-      content: this.bytes,
-      edits: this.#edits,
-    })
+  onRevert() {
+    this.#edits = [...this.#savedEdits]
   }
 }
 
-class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
+class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
   #uri: Uri
   #requestId = 1
   #callbacks = new Map<number, (response: number[]) => void>()
-  #webviews = new Set<{ key: string; webviewPanel: WebviewPanel }>()
+  #webviews = new Set<{ key: string; webview: Webview }>()
 
   constructor(uri: Uri) {
     this.#uri = uri
   }
 
-  #getWebviews(uri: Uri): WebviewPanel[] {
+  async #getBytesFromWebview(uri: Uri) {
     const key = uri.toString()
-    return [...this.#webviews]
-      .filter((entry) => entry.key === key)
-      .map((entry) => entry.webviewPanel)
-  }
-
-  #addWebview(uri: Uri, webviewPanel: WebviewPanel) {
-    const entry = { key: uri.toString(), webviewPanel }
-    this.#webviews.add(entry)
-
-    webviewPanel.onDidDispose(() => {
-      this.#webviews.delete(entry)
-    })
-  }
-
-  async #getBytesFromUi(uri: Uri) {
-    const [panel] = this.#getWebviews(uri)
-    if (!panel) {
+    const entry = [...this.#webviews].find((entry) => entry.key === key)
+    if (!entry) {
       throw new Error("Could not find webview to request bytes for")
     }
     const requestId = this.#requestId++
     const p = new Promise<number[]>((resolve) =>
       this.#callbacks.set(requestId, resolve)
     )
-    panel.webview.postMessage({ type: "getBytes", requestId })
+    entry.webview.postMessage({ type: "getBytes", requestId })
     return new Uint8Array(await p)
   }
 
@@ -170,95 +104,62 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     _token: CancellationToken,
   ): Promise<PixelEditDocument> {
     const bytes = await readFile(backupId ? Uri.parse(backupId) : uri)
-    const doc = new PixelEditDocument(uri, bytes)
-    doc.onDidChange((e) => {
-      // Tell VS Code that the document has been edited by the use.
-      this.#onDidChangeCustomDocument.fire({
-        document: doc,
-        ...e,
-      })
-    })
-    doc.onDidChangeContent((e) => {
-      // Update all webviews when the document changes
-      for (const webviewPanel of this.#getWebviews(doc.uri)) {
-        webviewPanel.webview.postMessage({
-          type: "update",
-          body: {
-            edits: e.edits,
-            content: e.content,
-          },
-        })
+    return new PixelEditDocument(uri, bytes)
+  }
+
+  #updateWebview(uri: Uri, edits: Edit[], bytes?: Uint8Array) {
+    const key = uri.toString()
+    for (const entry of this.#webviews) {
+      if (entry.key === key) {
+        entry.webview.postMessage({ type: "update", body: { edits, bytes } })
       }
-    })
-    return doc
+    }
   }
 
   resolveCustomEditor(
-    document: PixelEditDocument,
-    webviewPanel: WebviewPanel,
+    doc: PixelEditDocument,
+    panel: WebviewPanel,
     _token: CancellationToken,
   ) {
-    // Add the webview to our internal set of active webviews
-    this.#addWebview(document.uri, webviewPanel)
-    const webview = webviewPanel.webview
+    const entry = { key: doc.uri.toString(), webview: panel.webview }
+    this.#webviews.add(entry)
+    panel.onDidDispose(() => {
+      this.#webviews.delete(entry)
+    })
+    const webview = panel.webview
 
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
-    const scriptUri = webview.asWebviewUri(
-      Uri.joinPath(this.#uri, "src/edit.js"),
+    webview.html = html(
+      webview.asWebviewUri(Uri.joinPath(this.#uri, "src/edit.js")),
     )
-    webview.html = /* html */ `
-    <html>
-      <head>
-        <title>Pixel Edit</title>
-        <style>${style}</style>
-      </head>
-      <body>
-        <div id="popup">
-          <h3>Select the Dimensions Of the grid</h3>
-          <input type="text" id="width" value="16" />X<input
-            type="text"
-            id="height"
-            value="16"
-          />
-          <button id="close">OK</button>
-        </div>
-        <canvas id="canvas"></canvas>
-        <div id="toolbar">
-          <span class="item" onclick="board.setmode(0)" style="background-color: grey">
-            <i class="fas fa-pencil-alt"></i>
-          </span>
-          <span class="item" onclick="board.setmode(1)"><i class="fas fa-eraser"></i></span>
-          <span class="item" onclick="board.setmode(2)"><i class="fas fa-fill"></i></span>
-          <span class="item" onclick="board.setmode(3)"><i class="fas fa-slash"></i></span>
-          <span class="item" onclick="board.setmode(4)"><i class="far fa-circle"></i></span>
-          <span class="item" onclick="board.setmode(5)"><i class="far fa-circle" style="transform: rotateX(45deg)"></i></span>
-          <span class="item" onclick="board.undo()"><i class="fas fa-undo"></i></span>
-          <span class="item" onclick="board.redo()"><i class="fas fa-redo"></i></span>
-          <span class="item" onclick="board.clear()"><i class="fas fa-trash"></i></span>
-          <span class="item" onclick="board.addImage()"><i class="fa fa-upload"></i></span>
-        </div>
-        <div id="palette"></div>
-      </body>
-      <script
-        src="https://kit.fontawesome.com/473e8f3a80.js"
-        crossorigin="anonymous"
-      ></script>
-      <script src="${scriptUri}"></script>
-    </html>`
 
     webview.onDidReceiveMessage((e) => {
       switch (e.type) {
-        case "edit":
-          document.makeEdit(e as DocEdit)
-          return
+        case "edit": {
+          const edit = e as Edit
+          doc.edits.push(edit)
 
+          this.#onDidChangeCustomDocument.fire({
+            document: doc,
+            label: "Change",
+            undo: () => {
+              doc.edits.pop()
+              this.#updateWebview(doc.uri, doc.edits)
+            },
+            redo: () => {
+              doc.edits.push(edit)
+              this.#updateWebview(doc.uri, doc.edits)
+            },
+          })
+          return
+        }
         case "response": {
           this.#callbacks.get(e.requestId)?.(e.body)
           return
         }
         case "ready": {
-          if (document.uri.scheme === "untitled") {
+          if (doc.uri.scheme === "untitled") {
             webview.postMessage({
               type: "init",
               body: {
@@ -270,9 +171,9 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
             webview.postMessage({
               type: "init",
               body: {
-                value: document.bytes,
+                value: doc.bytes,
                 editable: workspace.fs.isWritableFileSystem(
-                  document.uri.scheme,
+                  doc.uri.scheme,
                 ),
               },
             })
@@ -288,11 +189,11 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   onDidChangeCustomDocument = this.#onDidChangeCustomDocument.event
 
   async saveCustomDocument(
-    document: PixelEditDocument,
+    doc: PixelEditDocument,
     cancel: CancellationToken,
   ) {
-    await this.saveCustomDocumentAs(document, document.uri, cancel)
-    document.onSave()
+    await this.saveCustomDocumentAs(doc, doc.uri, cancel)
+    doc.onSave()
   }
 
   async saveCustomDocumentAs(
@@ -300,7 +201,7 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     dest: Uri,
     cancel: CancellationToken,
   ) {
-    const fileData = await this.#getBytesFromUi(doc.uri)
+    const fileData = await this.#getBytesFromWebview(doc.uri)
     if (cancel.isCancellationRequested) {
       return
     }
@@ -308,7 +209,9 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
   }
 
   async revertCustomDocument(doc: PixelEditDocument) {
-    await doc.revert()
+    doc.bytes = await readFile(doc.uri)
+    doc.onRevert()
+    this.#updateWebview(doc.uri, doc.edits, doc.bytes)
   }
 
   async backupCustomDocument(
@@ -331,6 +234,47 @@ class PixelEditProvider implements CustomEditorProvider<PixelEditDocument> {
     }
   }
 }
+
+const html = (scriptUri: Uri) => /* html */ `
+<html>
+  <head>
+    <title>Pixel Edit</title>
+    <style>${style}</style>
+  </head>
+  <body>
+    <div id="popup">
+      <h3>Select the Dimensions Of the grid</h3>
+      <input type="text" id="width" value="16" />X<input
+        type="text"
+        id="height"
+        value="16"
+      />
+      <button id="close">OK</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="toolbar">
+      <span class="item" onclick="board.setmode(0)" style="background-color: grey">
+        <i class="fas fa-pencil-alt"></i>
+      </span>
+      <span class="item" onclick="board.setmode(1)"><i class="fas fa-eraser"></i></span>
+      <span class="item" onclick="board.setmode(2)"><i class="fas fa-fill"></i></span>
+      <span class="item" onclick="board.setmode(3)"><i class="fas fa-slash"></i></span>
+      <span class="item" onclick="board.setmode(4)"><i class="far fa-circle"></i></span>
+      <span class="item" onclick="board.setmode(5)"><i class="far fa-circle" style="transform: rotateX(45deg)"></i></span>
+      <span class="item" onclick="board.undo()"><i class="fas fa-undo"></i></span>
+      <span class="item" onclick="board.redo()"><i class="fas fa-redo"></i></span>
+      <span class="item" onclick="board.clear()"><i class="fas fa-trash"></i></span>
+      <span class="item" onclick="board.addImage()"><i class="fa fa-upload"></i></span>
+    </div>
+    <div id="palette"></div>
+  </body>
+  <script
+    src="https://kit.fontawesome.com/473e8f3a80.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="${scriptUri}"></script>
+</html>
+`
 
 const style = /* css */ `
 body {
