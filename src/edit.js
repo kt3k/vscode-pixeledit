@@ -257,6 +257,35 @@ class Canvas {
       }
     }
   }
+
+  importImage(uri) {
+    console.log("importImage")
+    const uimg = new Image()
+    uimg.src = uri
+    uimg.width = this.width
+    uimg.height = this.height
+    uimg.onload = () => {
+      console.log("importImage onload")
+      const pxc = document.createElement("canvas")
+      pxc.width = this.width
+      pxc.height = this.height
+      const pxctx = pxc.getContext("2d")
+      pxctx.drawImage(uimg, 0, 0, this.width, this.height)
+      for (let i = 0; i < this.width; i++) {
+        for (let j = 0; j < this.height; j++) {
+          let avg = [0, 0, 0, 0]
+          const pix = pxctx.getImageData(i, j, 1, 1).data
+          console.log("pix", pix)
+          pix.forEach((x, k) => {
+            avg[k] += x
+          })
+          console.log("avg", i, j, avg)
+          this.setcolor(avg)
+          this.draw(i, j)
+        }
+      }
+    }
+  }
 }
 class Popup {
   constructor(s) {
@@ -273,27 +302,6 @@ class Popup {
 
 window.onload = function () {
   console.log("onload!!")
-  //const canvasData = null
-  const canvasData = localStorage.getItem("pc-canvas-data")
-  if (canvasData) {
-    data = JSON.parse(canvasData)
-    console.log(data)
-    window.colors = data.colors
-    if (window.board == undefined) {
-      window.board = new Canvas(data.width, data.height)
-    }
-
-    const img = new Image()
-    img.setAttribute("src", data.url)
-    img.addEventListener("load", function () {
-      window.board.ctx.drawImage(img, 0, 0)
-    })
-    window.board.steps = data.steps
-    window.board.redo_arr = data.redo_arr
-    window.board.setcolor(data.currColor)
-  } else {
-    newProject()
-  }
   document.querySelector("#palette").innerHTML = colors.map((x) =>
     `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${
       x[2]
@@ -721,9 +729,38 @@ globalThis.onbeforeunload = function () {
 }
 
 globalThis.onerror = function (errorMsg, url, lineNumber) {
-  alert("Error: " + errorMsg + " Script: " + url + " Line: " + lineNumber)
+  console.log("Error: " + errorMsg + " Script: " + url + " Line: " + lineNumber)
 }
 
 globalThis.addEventListener("message", (e) => {
   console.log("got message event in pixeledit webview", e)
+  switch (e.data?.type) {
+    case "init": {
+      const base64 = btoa(String.fromCharCode(...e.data.bytes?.data))
+      console.log("base64", "data:image/png;base64," + base64)
+
+      const data = {}
+      data.width = 32
+      data.height = 32
+      console.log(data)
+      window.colors = data.colors
+      if (window.board == undefined) {
+        window.board = new Canvas(data.width, data.height)
+      }
+
+      window.board.importImage("data:image/png;base64," + base64)
+      //window.board.steps = data.steps
+      //window.board.redo_arr = data.redo_arr
+      //window.board.setcolor(data.currColor)
+    
+      break
+    }
+    case "new": {
+      newProject()
+      break
+    }
+  }
 })
+
+const vscode = acquireVsCodeApi()
+vscode.postMessage({ type: "ready" })

@@ -161,21 +161,17 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
         case "ready": {
           if (doc.uri.scheme === "untitled") {
             webview.postMessage({
-              type: "init",
-              body: {
-                untitled: true,
-                editable: true,
-              },
+              type: "new",
+              untitled: true,
+              editable: true,
             })
           } else {
             webview.postMessage({
               type: "init",
-              body: {
-                value: doc.bytes,
-                editable: workspace.fs.isWritableFileSystem(
-                  doc.uri.scheme,
-                ),
-              },
+              bytes: doc.bytes,
+              editable: workspace.fs.isWritableFileSystem(
+                doc.uri.scheme,
+              ),
             })
           }
         }
