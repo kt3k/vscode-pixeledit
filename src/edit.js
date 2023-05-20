@@ -157,7 +157,7 @@ class Canvas {
     this.ctx.globalAlpha = 1
     this.color = color
     this.ctx.fillStyle = "rgba(" + color[0] + "," + color[1] + "," + color[2] +
-      "," + color[3] + ")"
+      "," + color[3] + "%)"
   }
   setmode(i) {
     tools = [false, false, false, false, false, false]
@@ -267,6 +267,7 @@ class Canvas {
     uimg.onload = () => {
       console.log("importImage onload")
       const pxc = document.createElement("canvas")
+      document.body.appendChild(pxc)
       pxc.width = this.width
       pxc.height = this.height
       const pxctx = pxc.getContext("2d")
@@ -762,5 +763,4 @@ globalThis.addEventListener("message", (e) => {
   }
 })
 
-const vscode = acquireVsCodeApi()
-vscode.postMessage({ type: "ready" })
+acquireVsCodeApi().postMessage({ type: "ready" })
