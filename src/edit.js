@@ -276,11 +276,9 @@ class Canvas {
         for (let j = 0; j < this.height; j++) {
           let avg = [0, 0, 0, 0]
           const pix = pxctx.getImageData(i, j, 1, 1).data
-          console.log("pix", pix)
           pix.forEach((x, k) => {
             avg[k] += x
           })
-          console.log("avg", i, j, avg)
           this.setcolor(avg)
           this.draw(i, j)
         }
@@ -301,7 +299,7 @@ class Popup {
   }
 }
 
-window.onload = function () {
+function initPalette() {
   console.log("onload!!")
   document.querySelector("#palette").innerHTML = colors.map((x) =>
     `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${
@@ -724,27 +722,38 @@ function act(clr) {
   clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
 }
 
-globalThis.onbeforeunload = function () {
-  board.saveInLocal()
-  return "Data will be lost if you leave the page, are you sure?"
-}
-
-globalThis.onerror = function (errorMsg, url, lineNumber) {
-  console.log("Error: " + errorMsg + " Script: " + url + " Line: " + lineNumber)
-}
-
 globalThis.addEventListener("message", (e) => {
   console.log("got message event in pixeledit webview", e)
   switch (e.data?.type) {
     case "init": {
       const base64 = btoa(String.fromCharCode(...e.data.bytes?.data))
-      console.log("base64", "data:image/png;base64," + base64)
-
       const data = {}
+      // TODO(kt3k): Get width and height from the source png.
       data.width = 32
       data.height = 32
-      console.log(data)
-      window.colors = data.colors
+      // TODO(kt3k): Get colors from somewhere in disk
+      window.colors = [
+        [0, 0, 0, 255],
+        [127, 127, 127, 255],
+        [136, 0, 21, 255],
+        [237, 28, 36, 255],
+        [255, 127, 39, 255],
+        [255, 242, 0, 255],
+        [34, 177, 36, 255],
+        [0, 162, 232, 255],
+        [63, 72, 204, 255],
+        [163, 73, 164, 255],
+        [255, 255, 255, 255],
+        [195, 195, 195, 255],
+        [185, 122, 87, 255],
+        [255, 174, 201, 255],
+        [255, 201, 14, 255],
+        [239, 228, 176, 255],
+        [181, 230, 29, 255],
+        [153, 217, 234, 255],
+        [112, 146, 190, 255],
+        [200, 191, 231, 255],
+      ]
       if (window.board == undefined) {
         window.board = new Canvas(data.width, data.height)
       }
@@ -761,6 +770,7 @@ globalThis.addEventListener("message", (e) => {
       break
     }
   }
+  initPalette();
 })
 
 acquireVsCodeApi().postMessage({ type: "ready" })
