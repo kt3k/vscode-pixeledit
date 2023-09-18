@@ -13,6 +13,7 @@ import {
   window,
   workspace,
 } from "vscode"
+import { Buffer } from "buffer";
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
@@ -77,7 +78,7 @@ class PixelEditDocument implements CustomDocument {
 class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
   #uri: Uri
   #requestId = 1
-  #callbacks = new Map<number, (response: number[]) => void>()
+  #callbacks = new Map<number, (response: string) => void>()
   #webviews = new Set<{ key: string; webview: Webview }>()
 
   constructor(uri: Uri) {
@@ -91,11 +92,12 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
       throw new Error("Could not find webview to request bytes for")
     }
     const requestId = this.#requestId++
-    const p = new Promise<number[]>((resolve) =>
+    const dataUriPromise = new Promise<string>((resolve) =>
       this.#callbacks.set(requestId, resolve)
     )
-    entry.webview.postMessage({ type: "getBytes", requestId })
-    return new Uint8Array(await p)
+    entry.webview.postMessage({ type: "getBytes", requestId });
+    const dataUri = await dataUriPromise
+    return Buffer.from(dataUri.slice(22), "base64");
   }
 
   async openCustomDocument(
@@ -135,6 +137,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     )
 
     webview.onDidReceiveMessage((e) => {
+      console.log("message", e);
       switch (e.type) {
         case "edit": {
           const edit = e as Edit
@@ -197,11 +200,11 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     dest: Uri,
     cancel: CancellationToken,
   ) {
-    const fileData = await this.#getBytesFromWebview(doc.uri)
+    const bytes = await this.#getBytesFromWebview(doc.uri)
     if (cancel.isCancellationRequested) {
       return
     }
-    await workspace.fs.writeFile(dest, fileData)
+    await workspace.fs.writeFile(dest, bytes)
   }
 
   async revertCustomDocument(doc: PixelEditDocument) {

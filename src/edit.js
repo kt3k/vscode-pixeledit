@@ -1,6 +1,8 @@
 // Copyright 2022 Yoshiya Hinosawa. All rights reserved. MIT license.
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
+const vscode = acquireVsCodeApi();
+
 const Tool = {
   "pen": 0,
   "eraser": 1,
@@ -259,13 +261,11 @@ class Canvas {
   }
 
   importImage(uri) {
-    console.log("importImage")
     const uimg = new Image()
     uimg.src = uri
     uimg.width = this.width
     uimg.height = this.height
     uimg.onload = () => {
-      console.log("importImage onload")
       const pxc = document.createElement("canvas")
       document.body.appendChild(pxc)
       pxc.width = this.width
@@ -300,7 +300,6 @@ class Popup {
 }
 
 function initPalette() {
-  console.log("onload!!")
   document.querySelector("#palette").innerHTML = colors.map((x) =>
     `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${
       x[2]
@@ -722,7 +721,7 @@ function act(clr) {
   clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
 }
 
-globalThis.addEventListener("message", (e) => {
+globalThis.addEventListener("message", async (e) => {
   console.log("got message event in pixeledit webview", e)
   switch (e.data?.type) {
     case "init": {
@@ -762,15 +761,23 @@ globalThis.addEventListener("message", (e) => {
       //window.board.steps = data.steps
       //window.board.redo_arr = data.redo_arr
       //window.board.setcolor(data.currColor)
-    
+      initPalette();
       break
     }
     case "new": {
       newProject()
+      initPalette();
       break
     }
+    case "getBytes": {
+      vscode.postMessage({
+        type: "response",
+        requestId: e.data.requestId,
+        body: window.board.canvas.toDataURL("image/png"),
+      });
+      break;
+    }
   }
-  initPalette();
 })
 
-acquireVsCodeApi().postMessage({ type: "ready" })
+vscode.postMessage({ type: "ready" })
