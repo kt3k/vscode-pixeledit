@@ -85,21 +85,6 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     this.#uri = uri
   }
 
-  async #getBytesFromWebview(uri: Uri) {
-    const key = uri.toString()
-    const entry = [...this.#webviews].find((entry) => entry.key === key)
-    if (!entry) {
-      throw new Error("Could not find webview to request bytes for")
-    }
-    const requestId = this.#requestId++
-    const dataUriPromise = new Promise<string>((resolve) =>
-      this.#callbacks.set(requestId, resolve)
-    )
-    entry.webview.postMessage({ type: "getBytes", requestId });
-    const dataUri = await dataUriPromise
-    return Buffer.from(dataUri.slice(22), "base64");
-  }
-
   async openCustomDocument(
     uri: Uri,
     { backupId }: { backupId?: string },
@@ -200,11 +185,21 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     dest: Uri,
     cancel: CancellationToken,
   ) {
-    const bytes = await this.#getBytesFromWebview(doc.uri)
+    const key = doc.uri.toString()
+    const entry = [...this.#webviews].find((entry) => entry.key === key)
+    if (!entry) {
+      throw new Error("Could not find webview to request bytes for")
+    }
+    const requestId = this.#requestId++
+    const dataUriPromise = new Promise<string>((resolve) =>
+      this.#callbacks.set(requestId, resolve)
+    )
+    entry.webview.postMessage({ type: "getBytes", requestId });
+    const dataUri = await dataUriPromise
     if (cancel.isCancellationRequested) {
       return
     }
-    await workspace.fs.writeFile(dest, bytes)
+    await workspace.fs.writeFile(dest, Buffer.from(dataUri.slice(22), "base64"))
   }
 
   async revertCustomDocument(doc: PixelEditDocument) {
