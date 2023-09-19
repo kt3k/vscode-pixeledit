@@ -1,7 +1,7 @@
 // Copyright 2022 Yoshiya Hinosawa. All rights reserved. MIT license.
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
-const vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi()
 
 const Tool = {
   "pen": 0,
@@ -725,7 +725,6 @@ globalThis.addEventListener("message", async (e) => {
   console.log("got message event in pixeledit webview", e)
   switch (e.data?.type) {
     case "init": {
-      const base64 = btoa(String.fromCharCode(...e.data.bytes?.data))
       const data = {}
       // TODO(kt3k): Get width and height from the source png.
       data.width = 32
@@ -757,16 +756,16 @@ globalThis.addEventListener("message", async (e) => {
         window.board = new Canvas(data.width, data.height)
       }
 
-      window.board.importImage("data:image/png;base64," + base64)
+      window.board.importImage(e.data.bytes)
       //window.board.steps = data.steps
       //window.board.redo_arr = data.redo_arr
       //window.board.setcolor(data.currColor)
-      initPalette();
+      initPalette()
       break
     }
     case "new": {
       newProject()
-      initPalette();
+      initPalette()
       break
     }
     case "getBytes": {
@@ -774,8 +773,8 @@ globalThis.addEventListener("message", async (e) => {
         type: "response",
         requestId: e.data.requestId,
         body: window.board.canvas.toDataURL("image/png"),
-      });
-      break;
+      })
+      break
     }
   }
 })

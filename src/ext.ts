@@ -13,7 +13,7 @@ import {
   window,
   workspace,
 } from "vscode"
-import { Buffer } from "buffer";
+import { Buffer } from "buffer"
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
@@ -51,7 +51,7 @@ interface Edit {
 async function readFile(uri: Uri): Promise<Uint8Array> {
   return uri.scheme === "untitled"
     ? new Uint8Array()
-    : await workspace.fs.readFile(uri)
+    : workspace.fs.readFile(uri)
 }
 
 class PixelEditDocument implements CustomDocument {
@@ -90,7 +90,9 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     { backupId }: { backupId?: string },
     _token: CancellationToken,
   ): Promise<PixelEditDocument> {
+    console.log("openCustomDocument", uri, backupId)
     const bytes = await readFile(backupId ? Uri.parse(backupId) : uri)
+    console.log("bytes.length", bytes.length)
     return new PixelEditDocument(uri, bytes)
   }
 
@@ -122,7 +124,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     )
 
     webview.onDidReceiveMessage((e) => {
-      console.log("message", e);
+      console.log("onDidReceiveMessage", e)
       switch (e.type) {
         case "edit": {
           const edit = e as Edit
@@ -147,6 +149,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
           return
         }
         case "ready": {
+          console.log("doc.bytes", doc.uri, doc.bytes, doc.bytes.length)
           if (doc.uri.scheme === "untitled") {
             webview.postMessage({
               type: "new",
@@ -156,7 +159,8 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
           } else {
             webview.postMessage({
               type: "init",
-              bytes: doc.bytes,
+              bytes: "data:image/png;base64," +
+                Buffer.from(doc.bytes).toString("base64"),
               editable: workspace.fs.isWritableFileSystem(
                 doc.uri.scheme,
               ),
@@ -194,7 +198,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     const dataUriPromise = new Promise<string>((resolve) =>
       this.#callbacks.set(requestId, resolve)
     )
-    entry.webview.postMessage({ type: "getBytes", requestId });
+    entry.webview.postMessage({ type: "getBytes", requestId })
     const dataUri = await dataUriPromise
     if (cancel.isCancellationRequested) {
       return
