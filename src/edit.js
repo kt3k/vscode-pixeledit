@@ -29,11 +29,11 @@ class Canvas {
     this.w = +this.canvas.width
     this.h = +this.canvas.height
     this.ctx = this.canvas.getContext("2d")
-    this.ctx.fillStyle = "white"
+    this.ctx.fillStyle = "rgba(255,255,255,0%)"
     this.ctx.globalAlpha = 1
     this.ctx.fillRect(0, 0, this.w, this.h)
     this.data = [...Array(this.width)].map((_e) =>
-      Array(this.height).fill([255, 255, 255, 255])
+      Array(this.height).fill([255, 255, 255, 0])
     )
     this.steps = []
     this.redo_arr = []
@@ -285,7 +285,22 @@ class Canvas {
       }
     }
   }
+
+  exportImage() {
+    const canvas = document.createElement("canvas")
+    canvas.width = this.width
+    canvas.height = this.height
+    const ctx = canvas.getContext("2d")
+    this.data.forEach((row, i) => {
+      row.forEach(([r,g,b,a], j) => {
+        ctx.fillStyle = `rgba(${r},${g},${b},${a}%)`;
+        ctx.fillRect(i, j, 1, 1);
+      });
+    });
+    return canvas.toDataURL("image/png");
+  }
 }
+
 class Popup {
   constructor(s) {
     this.s = s
@@ -772,7 +787,7 @@ globalThis.addEventListener("message", async (e) => {
       vscode.postMessage({
         type: "response",
         requestId: e.data.requestId,
-        body: window.board.canvas.toDataURL("image/png"),
+        body: window.board.exportImage(),
       })
       break
     }
