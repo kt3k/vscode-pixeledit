@@ -1,3 +1,5 @@
+// Copyright 2022-2023 Yoshiya Hinosawa. All rights reserved. MIT license.
+
 import {
   type CancellationToken,
   commands,
@@ -120,7 +122,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
     webview.html = html(
-      webview.asWebviewUri(Uri.joinPath(this.#uri, "src/edit.js")),
+      webview.asWebviewUri(Uri.joinPath(this.#uri, "out/webview.js")),
     )
 
     webview.onDidReceiveMessage((e) => {

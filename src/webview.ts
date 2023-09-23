@@ -1,7 +1,13 @@
-// Copyright 2022 Yoshiya Hinosawa. All rights reserved. MIT license.
+// Copyright 2022-2023 Yoshiya Hinosawa. All rights reserved. MIT license.
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
+/// <reference lib="dom" />
+
 const vscode = acquireVsCodeApi()
+
+var board: Canvas
+var colors: [number, number, number, number][]
+var dim: any
 
 const Tool = {
   "pen": 0,
@@ -15,10 +21,29 @@ const Tool = {
   "clearCanvas": 9,
 }
 let tools = [true, false, false, false, false, false]
-let lc = []
+let lc: Point[] = []
 class Canvas {
-  constructor(width, height) {
-    this.canvas = document.querySelector("#canvas")
+  /** The canvas */
+  canvas: HTMLCanvasElement
+  /** The canvas context */
+  ctx: CanvasRenderingContext2D
+  /** Image data width */
+  width: number
+  /** Image data height */
+  height: number
+  /** Canvas element width */
+  w: number
+  /** Canvas element height */
+  h: number
+  /** pixel data array */
+  data: [number, number, number, number][][]
+  steps: any[]
+  redo_arr: any[]
+  previous_point: Point
+  active: boolean = false
+  color: [number, number, number, number] = [0, 0, 0, 0]
+  constructor(width: number, height: number) {
+    this.canvas = document.querySelector("#canvas")!
     this.canvas.width = 10 * width
     this.canvas.height = 10 * height
     this.width = width
@@ -28,7 +53,7 @@ class Canvas {
       Math.floor((height / width) * this.canvas.clientWidth) + "px"
     this.w = +this.canvas.width
     this.h = +this.canvas.height
-    this.ctx = this.canvas.getContext("2d")
+    this.ctx = this.canvas.getContext("2d")!
     this.ctx.fillStyle = "rgba(255,255,255,0%)"
     this.ctx.globalAlpha = 1
     this.ctx.fillRect(0, 0, this.w, this.h)
@@ -38,7 +63,7 @@ class Canvas {
     this.steps = []
     this.redo_arr = []
 
-    this.previous_point = new Point(undefined, undefined)
+    this.previous_point = new Point(undefined as any, undefined as any)
     // Moved on-click to on-mouse-up to tell the difference
     //  between a click and a mouse-drag + click
 
@@ -79,7 +104,7 @@ class Canvas {
     })
 
     this.canvas.addEventListener("mousedown", (_e) => {
-      this.previous_point = new Point(undefined, undefined)
+      this.previous_point = new Point(undefined as any, undefined as any)
       this.active = true
       console.log("Active")
     })
@@ -112,15 +137,15 @@ class Canvas {
         }
       } else if (tools[Tool.circle]) {
         const centre = new Point(x, y)
-        const radius = +prompt("radius?")
+        const radius = +prompt("radius?")!
         const lp = circle(radius, centre)
         for (const p of lp) this.draw(p.x, p.y)
       } else if (tools[Tool.ellipse]) {
         const center = new Point(x, y)
-        const radiusX = +prompt("X radius?")
-        const radiusY = +prompt("Y radius?")
+        const radiusX = +prompt("X radius?")!
+        const radiusY = +prompt("Y radius?")!
         const lp = ellipse(radiusX, radiusY, center)
-        for (p of lp) {
+        for (const p of lp) {
           this.draw(p.x, p.y)
         }
       } else {
@@ -129,7 +154,7 @@ class Canvas {
       }
     })
   }
-  draw(x, y, count) {
+  draw(x: number, y: number, count = false) {
     if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
       this.data[x][y] = this.color
       this.ctx.fillRect(
@@ -147,7 +172,7 @@ class Canvas {
       }
     }
   }
-  erase(x, y) {
+  erase(x: number, y: number) {
     const temp = this.color
     const tga = this.ctx.globalAlpha
     this.setcolor([255, 255, 255, 255])
@@ -155,23 +180,23 @@ class Canvas {
     this.setcolor(temp)
     this.ctx.globalAlpha = tga
   }
-  setcolor(color) {
+  setcolor(color: [number, number, number, number]) {
     this.ctx.globalAlpha = 1
     this.color = color
     this.ctx.fillStyle = "rgba(" + color[0] + "," + color[1] + "," + color[2] +
       "," + color[3] + "%)"
   }
-  setmode(i) {
+  setmode(i: number) {
     tools = [false, false, false, false, false, false]
     tools[i] = true
-    document.querySelectorAll("#toolbar .item").forEach((x, i) => {
+    document.querySelectorAll<HTMLElement>("#toolbar .item").forEach((x, i) => {
       if (tools[i]) x.style.backgroundColor = "grey"
       else x.style.backgroundColor = ""
     })
   }
   save() {
     this.canvas.toBlob(function (blob) {
-      const url = URL.createObjectURL(blob)
+      const url = URL.createObjectURL(blob!)
       const link = document.createElement("a")
       link.download = "canvas.png"
       link.href = url
@@ -227,30 +252,35 @@ class Canvas {
     const fp = document.createElement("input")
     fp.type = "file"
     fp.click()
-    fp.onchange = (e) => {
+    fp.onchange = (e: any) => {
       const reader = new FileReader()
       reader.readAsDataURL(e.target.files[0])
       reader.onload = () => {
         const uimg = new Image()
-        uimg.src = reader.result
+        uimg.src = reader.result as any
         uimg.width = this.w
         uimg.height = this.h
         uimg.onload = () => {
           const pxc = document.createElement("canvas")
           pxc.width = this.w
           pxc.height = this.h
-          const pxctx = pxc.getContext("2d")
+          const pxctx = pxc.getContext("2d")!
           pxctx.drawImage(uimg, 0, 0, this.w, this.h)
           for (let i = 0; i < this.width; i++) {
             for (let j = 0; j < this.height; j++) {
               let ctr = 0
-              let avg = [0, 0, 0, 0]
+              let avg = [0, 0, 0, 0] as [number, number, number, number]
               const pix = pxctx.getImageData(10 * i, 10 * j, 10, 10).data
               pix.forEach((x, k) => {
                 avg[k % 4] += x
                 if (k % 4 == 0) ctr++
               })
-              avg = avg.map((x) => ~~(x / ctr))
+              avg = avg.map((x) => ~~(x / ctr)) as [
+                number,
+                number,
+                number,
+                number,
+              ]
               this.setcolor(avg)
               this.draw(i, j)
             }
@@ -260,7 +290,7 @@ class Canvas {
     }
   }
 
-  importImage(uri) {
+  importImage(uri: string) {
     const uimg = new Image()
     uimg.src = uri
     uimg.width = this.width
@@ -270,11 +300,11 @@ class Canvas {
       document.body.appendChild(pxc)
       pxc.width = this.width
       pxc.height = this.height
-      const pxctx = pxc.getContext("2d")
+      const pxctx = pxc.getContext("2d")!
       pxctx.drawImage(uimg, 0, 0, this.width, this.height)
       for (let i = 0; i < this.width; i++) {
         for (let j = 0; j < this.height; j++) {
-          let avg = [0, 0, 0, 0]
+          let avg = [0, 0, 0, 0] as [number, number, number, number]
           const pix = pxctx.getImageData(i, j, 1, 1).data
           pix.forEach((x, k) => {
             avg[k] += x
@@ -290,46 +320,47 @@ class Canvas {
     const canvas = document.createElement("canvas")
     canvas.width = this.width
     canvas.height = this.height
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d")!
     this.data.forEach((row, i) => {
-      row.forEach(([r,g,b,a], j) => {
-        ctx.fillStyle = `rgba(${r},${g},${b},${a}%)`;
-        ctx.fillRect(i, j, 1, 1);
-      });
-    });
-    return canvas.toDataURL("image/png");
+      row.forEach(([r, g, b, a], j) => {
+        ctx.fillStyle = `rgba(${r},${g},${b},${a}%)`
+        ctx.fillRect(i, j, 1, 1)
+      })
+    })
+    return canvas.toDataURL("image/png")
   }
 }
 
 class Popup {
-  constructor(s) {
+  s: string
+  constructor(s: string) {
     this.s = s
-    document.querySelector(this.s).style.display = "block"
-    document.querySelector(this.s).style.transform =
+    document.querySelector<HTMLElement>(this.s)!.style.display = "block"
+    document.querySelector<HTMLElement>(this.s)!.style.transform =
       "translate(-50%,-50%) scale(1,1)"
   }
   close() {
-    document.querySelector(this.s).style.transform =
+    document.querySelector<HTMLElement>(this.s)!.style.transform =
       "translate(-50%,-50%) scale(0,0)"
   }
 }
 
 function initPalette() {
-  document.querySelector("#palette").innerHTML = colors.map((x) =>
+  document.querySelector("#palette")!.innerHTML = colors.map((x) =>
     `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${
       x[2]
     })" onclick="board.setcolor([${x}]);act(this);" oncontextmenu="board.setcolor([${x}]);act(this);board.ctx.globalAlpha=+prompt('Transparency(0-1)?')"></span>`
   ).join("\n")
 
-  document.querySelector("#palette").addEventListener(
+  document.querySelector("#palette")!.addEventListener(
     "contextmenu",
     (e) => e.preventDefault(),
   )
 }
 
-document.querySelector("#close").onclick = function () {
-  const width = +document.querySelector("#width").value
-  const height = +document.querySelector("#height").value
+document.querySelector<HTMLElement>("#close")!.onclick = function () {
+  const width = +document.querySelector<HTMLInputElement>("#width")!.value
+  const height = +document.querySelector<HTMLInputElement>("#height")!.value
   if (window.board == undefined) {
     window.board = new Canvas(width, height)
   }
@@ -342,7 +373,7 @@ document.querySelector("#close").onclick = function () {
     Math.floor((height / width) * window.board.canvas.clientWidth) + "px"
   window.board.w = +window.board.canvas.width
   window.board.h = +window.board.canvas.height
-  window.board.ctx = window.board.canvas.getContext("2d")
+  window.board.ctx = window.board.canvas.getContext("2d")!
   window.board.ctx.fillStyle = "white"
   window.board.ctx.globalAlpha = 1
   window.board.ctx.fillRect(0, 0, window.board.w, window.board.h)
@@ -382,7 +413,7 @@ function newProject() {
     [200, 191, 231, 255],
   ]
 }
-function filler(x, y, cc) {
+function filler(x: number, y: number, cc: [number, number, number, number]) {
   if (x >= 0 && x < board.width && y >= 0 && y < board.height) {
     if (
       JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
@@ -398,7 +429,7 @@ function filler(x, y, cc) {
 }
 
 /** This function Multiplies two Matrices (a, b) */
-function matrixMult(a, b) {
+function matrixMult(a: number[][], b: number[][]) {
   const aNumRows = a.length
   const aNumCols = a[0].length
   const bNumCols = b[0].length
@@ -439,16 +470,14 @@ function matrixMult(a, b) {
  */
 
 class Point {
-  constructor(x, y) {
-    this.x = x
-    this.y = y
+  constructor(public x: number, public y: number) {
   }
-  equals(point) {
+  equals(point: Point) {
     return ((this.x == point.x) && (this.y == point.y))
   }
 }
 
-function line(p1, p2) {
+function line(p1: Point, p2: Point) {
   /* this function calculates the points of the line with endpoints p1 &p2
 	 */
   const points = []
@@ -479,14 +508,14 @@ function line(p1, p2) {
   return points
 }
 
-function circle(r, pc) {
+function circle(r: number, pc: Point) {
   /* This function returns points of Circle with radius r and center as pc*/
 
   let points = []
   let x = 0
   let y = r
   points.push(new Point(x, y))
-  p = 1 - r
+  let p = 1 - r
 
   while (x <= y) {
     //conditions
@@ -511,9 +540,9 @@ function circle(r, pc) {
   return points
 }
 
-function _sym8(points) {
+function _sym8(points: Point[]) {
   /* This is a helper function for circle which calculates points on all the 8 symmetries */
-  const nPoints = []
+  const nPoints: Point[] = []
 
   Array.prototype.push.apply(nPoints, points)
 
@@ -541,7 +570,7 @@ function _sym8(points) {
   return nPoints
 }
 
-function ellipse(rx, ry, pc) {
+function ellipse(rx: number, ry: number, pc: Point) {
   /* This function return the points of the ellipse with major axis rx and minor axis ry with center pc */
   let points = []
   let x = 0
@@ -593,9 +622,9 @@ function ellipse(rx, ry, pc) {
   return points
 }
 
-function _sym4(points) {
+function _sym4(points: Point[]) {
   /* This is a helper function for ellipse which calculates points on all the 4 symmetries */
-  const nPoints = []
+  const nPoints: Point[] = []
 
   Array.prototype.push.apply(nPoints, points)
 
@@ -632,7 +661,7 @@ function _sym4(points) {
  */
 
 // deno-lint-ignore no-unused-vars
-function translate(points, pt) {
+function translate(points: Point[], pt: Point) {
   /* This function translates the object to the new co-ords by pt units */
 
   for (const p of points) {
@@ -655,7 +684,7 @@ function translate(points, pt) {
 }
 
 // deno-lint-ignore no-unused-vars
-function scale(points, sx, sy, pf) {
+function scale(points: Point[], sx: number, sy: number, pf: Point) {
   /* This function Scales the object  with sx along x-axis and sy along y-axis with a fixed point pf */
   for (const p of points) {
     const a = [
@@ -691,7 +720,7 @@ function scale(points, sx, sy, pf) {
 }
 
 // deno-lint-ignore no-unused-vars
-function rotate(points, angle, pf) {
+function rotate(points: Point[], angle: number, pf: Point) {
   /* This function rotates the object with angle with respect to fixed Point pf */
   angle = angle * (Math.PI / 180.0)
   for (const p of points) {
@@ -729,18 +758,18 @@ function rotate(points, angle, pf) {
 }
 
 // deno-lint-ignore no-unused-vars
-function act(clr) {
-  document.querySelectorAll("#palette .item").forEach((x) =>
+function act(clr: HTMLElement) {
+  document.querySelectorAll<HTMLElement>("#palette .item").forEach((x) =>
     x.style.boxShadow = ""
   )
   clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
 }
 
-globalThis.addEventListener("message", async (e) => {
+globalThis.addEventListener("message", async (e: any) => {
   console.log("got message event in pixeledit webview", e)
   switch (e.data?.type) {
     case "init": {
-      const data = {}
+      const data = { width: 0, height: 0 }
       // TODO(kt3k): Get width and height from the source png.
       data.width = 32
       data.height = 32
