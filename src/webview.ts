@@ -44,7 +44,7 @@ class Canvas {
   /** pixel data array */
   data: Color[][]
   steps: any[]
-  redo_arr: any[]
+  redoArray: any[]
   prevPoint: Point
   active: boolean = false
   color: Color = [0, 0, 0, 0]
@@ -67,7 +67,7 @@ class Canvas {
       Array(this.height).fill([255, 255, 255, 0])
     )
     this.steps = []
-    this.redo_arr = []
+    this.redoArray = []
 
     this.prevPoint = new Point(undefined as any, undefined as any)
 
@@ -221,7 +221,7 @@ class Canvas {
 
   undo() {
     this.clear()
-    this.redo_arr.push(this.steps.pop())
+    this.redoArray.push(this.steps.pop())
     this.steps.forEach((step) => {
       this.setcolor(step[2])
       this.ctx.globalAlpha = step[3]
@@ -230,7 +230,7 @@ class Canvas {
   }
 
   redo() {
-    this.steps.push(this.redo_arr.pop())
+    this.steps.push(this.redoArray.pop())
     this.steps.forEach((step) => {
       this.setcolor(step[2])
       this.ctx.globalAlpha = step[3]
@@ -246,7 +246,7 @@ class Canvas {
       "height": this.height,
       "url": this.canvas.toDataURL(),
       "steps": this.steps,
-      "redo_arr": this.redo_arr,
+      "redo_arr": this.redoArray,
       "dim": window.dim,
     }
     localStorage.setItem("pc-canvas-data", JSON.stringify(d))
@@ -386,7 +386,7 @@ document.querySelector<HTMLElement>("#close")!.onclick = function () {
     Array(window.board.height).fill([255, 255, 255, 255])
   )
   window.board.steps = []
-  window.board.redo_arr = []
+  window.board.redoArray = []
 
   window.board.setcolor([0, 0, 0, 255])
   window.dim.close()
