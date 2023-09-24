@@ -11,6 +11,10 @@ var board: Canvas
 var colors: Color[]
 var dim: any
 
+function toCssColor(c: Color): string {
+  return `rgba(${c[0]},${c[1]},${c[2]},${c[3]}%)`
+}
+
 const Tool = {
   "pen": 0,
   "eraser": 1,
@@ -185,8 +189,7 @@ class Canvas {
   setcolor(color: Color) {
     this.ctx.globalAlpha = 1
     this.color = color
-    this.ctx.fillStyle = "rgba(" + color[0] + "," + color[1] + "," + color[2] +
-      "," + color[3] + "%)"
+    this.ctx.fillStyle = toCssColor(color)
   }
   setmode(i: number) {
     tools = [false, false, false, false, false, false]
@@ -324,8 +327,8 @@ class Canvas {
     canvas.height = this.height
     const ctx = canvas.getContext("2d")!
     this.data.forEach((row, i) => {
-      row.forEach(([r, g, b, a], j) => {
-        ctx.fillStyle = `rgba(${r},${g},${b},${a}%)`
+      row.forEach((color, j) => {
+        ctx.fillStyle = toCssColor(color)
         ctx.fillRect(i, j, 1, 1)
       })
     })
