@@ -45,7 +45,7 @@ class Canvas {
   data: Color[][]
   steps: any[]
   redoArray: any[]
-  prevPoint: Point
+  prevPoint: Point | undefined
   active: boolean = false
   color: Color = [0, 0, 0, 0]
   constructor(width: number, height: number) {
@@ -69,7 +69,7 @@ class Canvas {
     this.steps = []
     this.redoArray = []
 
-    this.prevPoint = new Point(undefined as any, undefined as any)
+    this.prevPoint = undefined
 
     // Moved on-click to on-mouse-up to tell the difference
     //  between a click and a mouse-drag + click
@@ -110,13 +110,13 @@ class Canvas {
     })
 
     this.canvas.addEventListener("mousedown", (_e) => {
-      this.prevPoint = new Point(undefined as any, undefined as any)
+      this.prevPoint = undefined
       this.active = true
       console.log("Active")
     })
     this.canvas.addEventListener("mouseup", (e) => {
       this.active = false
-      if (this.prevPoint.x !== undefined) {
+      if (this.prevPoint !== undefined) {
         return // Don't re-paint the last point in a streak
       }
 
@@ -454,7 +454,10 @@ function matrixMult(a: number[][], b: number[][]) {
 class Point {
   constructor(public x: number, public y: number) {
   }
-  equals(point: Point) {
+  equals(point: Point | undefined) {
+    if (point === undefined) {
+      return false
+    }
     return ((this.x == point.x) && (this.y == point.y))
   }
 }
