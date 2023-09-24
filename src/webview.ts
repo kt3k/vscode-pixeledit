@@ -5,8 +5,10 @@
 
 const vscode = acquireVsCodeApi()
 
+type Color = [number, number, number, number]
+
 var board: Canvas
-var colors: [number, number, number, number][]
+var colors: Color[]
 var dim: any
 
 const Tool = {
@@ -36,12 +38,12 @@ class Canvas {
   /** Canvas element height */
   h: number
   /** pixel data array */
-  data: [number, number, number, number][][]
+  data: Color[][]
   steps: any[]
   redo_arr: any[]
   previous_point: Point
   active: boolean = false
-  color: [number, number, number, number] = [0, 0, 0, 0]
+  color: Color = [0, 0, 0, 0]
   constructor(width: number, height: number) {
     this.canvas = document.querySelector("#canvas")!
     this.canvas.width = 10 * width
@@ -180,7 +182,7 @@ class Canvas {
     this.setcolor(temp)
     this.ctx.globalAlpha = tga
   }
-  setcolor(color: [number, number, number, number]) {
+  setcolor(color: Color) {
     this.ctx.globalAlpha = 1
     this.color = color
     this.ctx.fillStyle = "rgba(" + color[0] + "," + color[1] + "," + color[2] +
@@ -269,7 +271,7 @@ class Canvas {
           for (let i = 0; i < this.width; i++) {
             for (let j = 0; j < this.height; j++) {
               let ctr = 0
-              let avg = [0, 0, 0, 0] as [number, number, number, number]
+              let avg = [0, 0, 0, 0] as Color
               const pix = pxctx.getImageData(10 * i, 10 * j, 10, 10).data
               pix.forEach((x, k) => {
                 avg[k % 4] += x
@@ -304,7 +306,7 @@ class Canvas {
       pxctx.drawImage(uimg, 0, 0, this.width, this.height)
       for (let i = 0; i < this.width; i++) {
         for (let j = 0; j < this.height; j++) {
-          let avg = [0, 0, 0, 0] as [number, number, number, number]
+          let avg = [0, 0, 0, 0] as Color
           const pix = pxctx.getImageData(i, j, 1, 1).data
           pix.forEach((x, k) => {
             avg[k] += x
@@ -413,7 +415,7 @@ function newProject() {
     [200, 191, 231, 255],
   ]
 }
-function filler(x: number, y: number, cc: [number, number, number, number]) {
+function filler(x: number, y: number, cc: Color) {
   if (x >= 0 && x < board.width && y >= 0 && y < board.height) {
     if (
       JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&

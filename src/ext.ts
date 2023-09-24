@@ -15,7 +15,7 @@ import {
   window,
   workspace,
 } from "vscode"
-import { Buffer } from "buffer"
+import { Buffer } from "node:buffer"
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
