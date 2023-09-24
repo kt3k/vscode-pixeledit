@@ -45,7 +45,7 @@ class Canvas {
   data: Color[][]
   steps: any[]
   redo_arr: any[]
-  previous_point: Point
+  prevPoint: Point
   active: boolean = false
   color: Color = [0, 0, 0, 0]
   constructor(width: number, height: number) {
@@ -69,10 +69,10 @@ class Canvas {
     this.steps = []
     this.redo_arr = []
 
-    this.previous_point = new Point(undefined as any, undefined as any)
+    this.prevPoint = new Point(undefined as any, undefined as any)
+
     // Moved on-click to on-mouse-up to tell the difference
     //  between a click and a mouse-drag + click
-
     this.canvas.addEventListener("mousemove", (e) => {
       if (this.active) {
         const rect = this.canvas.getBoundingClientRect()
@@ -82,8 +82,8 @@ class Canvas {
         y = Math.floor(this.height * y / this.canvas.clientHeight)
         if (tools[Tool.pen]) {
           const p = new Point(x, y)
-          if (!p.equals(this.previous_point)) {
-            this.previous_point = p
+          if (!p.equals(this.prevPoint)) {
+            this.prevPoint = p
             this.draw(p.x, p.y)
           }
         } else if (tools[Tool.eraser]) {
@@ -100,8 +100,8 @@ class Canvas {
       y = Math.floor(this.height * y / this.canvas.clientHeight)
       if (tools[Tool.pen]) {
         const p = new Point(x, y)
-        if (!p.equals(this.previous_point)) {
-          this.previous_point = p
+        if (!p.equals(this.prevPoint)) {
+          this.prevPoint = p
           this.draw(p.x, p.y)
         }
       } else if (tools[Tool.eraser]) {
@@ -110,13 +110,13 @@ class Canvas {
     })
 
     this.canvas.addEventListener("mousedown", (_e) => {
-      this.previous_point = new Point(undefined as any, undefined as any)
+      this.prevPoint = new Point(undefined as any, undefined as any)
       this.active = true
       console.log("Active")
     })
     this.canvas.addEventListener("mouseup", (e) => {
       this.active = false
-      if (this.previous_point.x !== undefined) {
+      if (this.prevPoint.x !== undefined) {
         return // Don't re-paint the last point in a streak
       }
 
@@ -155,7 +155,7 @@ class Canvas {
           this.draw(p.x, p.y)
         }
       } else {
-        this.previous_point = new Point(x, y)
+        this.prevPoint = new Point(x, y)
         this.draw(x, y)
       }
     })
@@ -451,29 +451,6 @@ function matrixMult(a: number[][], b: number[][]) {
   return m
 }
 
-/*
- *  function Template
- *
- *  function Shape_name(data){
- * 	//data -> parameters Required for the Shape
- * 	let points = [];
- *
- * 	// Calculate points
- *
- * 	return points;
- * }
- *
- * example:
- * 	function line(x0, y0, x1, y1){
- * 	  //x0, y0 -> Initial Points of Line
- * 	  //x1, y1 ->  End Points of the line
- *        let points = []
- *
- * 	  //Calculate points
- *
- * 	  return points
- */
-
 class Point {
   constructor(public x: number, public y: number) {
   }
@@ -644,26 +621,6 @@ function _sym4(points: Point[]) {
   }
   return nPoints
 }
-/*
- *  function Template
- *
- *  function transformation_name(points, others){
- * 	//points -> array of point of object
- * 	//others -> any othee parameters the specific transformation requires
- *
- * 	return points;//This is the tranaformed Points
- *  }
- *
- *  example:
- *  	function translation(points, tPoint){
- *  	  //points -> array of point of Object
- * 	  //tPoint -> Points to be Translated
- *
- * 	  //Do Processing
- *
- * 	  return points;//This is translated points
- * 	}
- */
 
 // deno-lint-ignore no-unused-vars
 function translate(points: Point[], pt: Point) {
