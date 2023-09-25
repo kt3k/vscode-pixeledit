@@ -56,7 +56,7 @@ async function readFile(uri: Uri): Promise<Uint8Array> {
     : workspace.fs.readFile(uri)
 }
 
-class PixelEditDocument implements CustomDocument {
+class PixelDoc implements CustomDocument {
   #edits: Edit[] = []
   #savedEdits: Edit[] = []
 
@@ -77,7 +77,7 @@ class PixelEditDocument implements CustomDocument {
   }
 }
 
-class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
+class PixelEdit implements CustomEditorProvider<PixelDoc> {
   #uri: Uri
   #requestId = 1
   #callbacks = new Map<number, (response: string) => void>()
@@ -91,11 +91,9 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     uri: Uri,
     { backupId }: { backupId?: string },
     _token: CancellationToken,
-  ): Promise<PixelEditDocument> {
-    console.log("openCustomDocument", uri, backupId)
+  ): Promise<PixelDoc> {
     const bytes = await readFile(backupId ? Uri.parse(backupId) : uri)
-    console.log("bytes.length", bytes.length)
-    return new PixelEditDocument(uri, bytes)
+    return new PixelDoc(uri, bytes)
   }
 
   #updateWebview(uri: Uri, edits: Edit[], bytes?: Uint8Array) {
@@ -108,7 +106,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
   }
 
   resolveCustomEditor(
-    doc: PixelEditDocument,
+    doc: PixelDoc,
     panel: WebviewPanel,
     _token: CancellationToken,
   ) {
@@ -132,7 +130,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
           const edit = e as Edit
           doc.edits.push(edit)
 
-          this.#onDidChangeCustomDocument.fire({
+          this.#changeEvent.fire({
             document: doc,
             label: "Change",
             undo: () => {
@@ -151,7 +149,6 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
           return
         }
         case "ready": {
-          console.log("doc.bytes", doc.uri, doc.bytes, doc.bytes.length)
           if (doc.uri.scheme === "untitled") {
             webview.postMessage({
               type: "new",
@@ -173,13 +170,11 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     })
   }
 
-  #onDidChangeCustomDocument = new EventEmitter<
-    CustomDocumentEditEvent<PixelEditDocument>
-  >()
-  onDidChangeCustomDocument = this.#onDidChangeCustomDocument.event
+  #changeEvent = new EventEmitter<CustomDocumentEditEvent<PixelDoc>>()
+  onDidChangeCustomDocument = this.#changeEvent.event
 
   async saveCustomDocument(
-    doc: PixelEditDocument,
+    doc: PixelDoc,
     cancel: CancellationToken,
   ) {
     await this.saveCustomDocumentAs(doc, doc.uri, cancel)
@@ -187,7 +182,7 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
   }
 
   async saveCustomDocumentAs(
-    doc: PixelEditDocument,
+    doc: PixelDoc,
     dest: Uri,
     cancel: CancellationToken,
   ) {
@@ -208,14 +203,14 @@ class PixelEdit implements CustomEditorProvider<PixelEditDocument> {
     await workspace.fs.writeFile(dest, Buffer.from(dataUri.slice(22), "base64"))
   }
 
-  async revertCustomDocument(doc: PixelEditDocument) {
+  async revertCustomDocument(doc: PixelDoc) {
     doc.bytes = await readFile(doc.uri)
     doc.onRevert()
     this.#updateWebview(doc.uri, doc.edits, doc.bytes)
   }
 
   async backupCustomDocument(
-    doc: PixelEditDocument,
+    doc: PixelDoc,
     ctx: CustomDocumentBackupContext,
     cancel: CancellationToken,
   ) {
