@@ -252,49 +252,6 @@ class Canvas {
     localStorage.setItem("pc-canvas-data", JSON.stringify(d))
   }
 
-  /** Import image from the given external file */
-  addImage() {
-    const fp = document.createElement("input")
-    fp.type = "file"
-    fp.click()
-    fp.onchange = (e: any) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(e.target.files[0])
-      reader.onload = () => {
-        const uimg = new Image()
-        uimg.src = reader.result as any
-        uimg.width = this.w
-        uimg.height = this.h
-        uimg.onload = () => {
-          const pxc = document.createElement("canvas")
-          pxc.width = this.w
-          pxc.height = this.h
-          const pxctx = pxc.getContext("2d")!
-          pxctx.drawImage(uimg, 0, 0, this.w, this.h)
-          for (let i = 0; i < this.width; i++) {
-            for (let j = 0; j < this.height; j++) {
-              let ctr = 0
-              let avg = [0, 0, 0, 0] as Color
-              const pix = pxctx.getImageData(10 * i, 10 * j, 10, 10).data
-              pix.forEach((x, k) => {
-                avg[k % 4] += x
-                if (k % 4 == 0) ctr++
-              })
-              avg = avg.map((x) => ~~(x / ctr)) as [
-                number,
-                number,
-                number,
-                number,
-              ]
-              this.setcolor(avg)
-              this.draw(i, j)
-            }
-          }
-        }
-      }
-    }
-  }
-
   importImage(uri: string) {
     const uimg = new Image()
     uimg.src = uri
