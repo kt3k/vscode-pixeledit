@@ -278,6 +278,13 @@ class Canvas {
     }
   }
 
+  static async import(uri: string): Promise<Canvas> {
+    const img = await loadImage(uri)
+    const board = new Canvas(img.width, img.height)
+    await board.importImage(uri)
+    return board
+  }
+
   exportImage() {
     const canvas = document.createElement("canvas")
     canvas.width = this.width
@@ -291,6 +298,15 @@ class Canvas {
     })
     return canvas.toDataURL("image/png")
   }
+}
+
+function loadImage(uri: string): Promise<HTMLImageElement> {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image()
+    img.src = uri
+    img.onload = () => resolve(img)
+    img.onerror = (e) => reject(e)
+  })
 }
 
 class Popup {
@@ -691,11 +707,8 @@ globalThis.addEventListener("message", async (e: any) => {
   console.log("got message event in pixeledit webview", e)
   switch (e.data?.type) {
     case "init": {
-      const data = { width: 0, height: 0 }
-      // TODO(kt3k): Get width and height from the source png.
-      data.width = 32
-      data.height = 32
       // TODO(kt3k): Get colors from somewhere in disk
+      // ex. ./pixeledit.json
       window.colors = [
         [0, 0, 0, 255],
         [127, 127, 127, 255],
@@ -718,14 +731,7 @@ globalThis.addEventListener("message", async (e: any) => {
         [112, 146, 190, 255],
         [200, 191, 231, 255],
       ]
-      if (window.board == undefined) {
-        window.board = new Canvas(data.width, data.height)
-      }
-
-      window.board.importImage(e.data.bytes)
-      //window.board.steps = data.steps
-      //window.board.redo_arr = data.redo_arr
-      //window.board.setcolor(data.currColor)
+      window.board = await Canvas.import(e.data.bytes)
       initPalette()
       break
     }
