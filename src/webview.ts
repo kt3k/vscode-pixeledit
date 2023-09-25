@@ -7,7 +7,7 @@ const vscode = acquireVsCodeApi()
 
 type Color = [number, number, number, number]
 
-var board: Canvas
+var board: Board
 var colors: Color[]
 var dim: any
 
@@ -28,7 +28,7 @@ const Tool = {
 }
 let tools = [true, false, false, false, false, false]
 let lc: Point[] = []
-class Canvas {
+class Board {
   /** The canvas */
   canvas: HTMLCanvasElement
   /** The canvas context */
@@ -278,9 +278,9 @@ class Canvas {
     }
   }
 
-  static async import(uri: string): Promise<Canvas> {
+  static async import(uri: string): Promise<Board> {
     const img = await loadImage(uri)
-    const board = new Canvas(img.width, img.height)
+    const board = new Board(img.width, img.height)
     await board.importImage(uri)
     return board
   }
@@ -340,7 +340,7 @@ document.querySelector<HTMLElement>("#close")!.onclick = function () {
   const width = +document.querySelector<HTMLInputElement>("#width")!.value
   const height = +document.querySelector<HTMLInputElement>("#height")!.value
   if (window.board == undefined) {
-    window.board = new Canvas(width, height)
+    window.board = new Board(width, height)
   }
   window.board.canvas.width = 10 * width //display each pixel in 10 by 10pxs
   window.board.canvas.height = 10 * height
@@ -731,7 +731,7 @@ globalThis.addEventListener("message", async (e: any) => {
         [112, 146, 190, 255],
         [200, 191, 231, 255],
       ]
-      window.board = await Canvas.import(e.data.bytes)
+      window.board = await Board.import(e.data.bytes)
       initPalette()
       break
     }
