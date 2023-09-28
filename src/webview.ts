@@ -199,15 +199,8 @@ class Board {
       else x.style.backgroundColor = ""
     })
   }
-  save() {
-    this.canvas.toBlob(function (blob) {
-      const url = URL.createObjectURL(blob!)
-      const link = document.createElement("a")
-      link.download = "canvas.png"
-      link.href = url
-      link.click()
-    })
-  }
+
+  update(bytes: string, edits: {}[]) {}
 
   clear() {
     this.ctx.fillStyle = "white"
@@ -236,20 +229,6 @@ class Board {
       this.ctx.globalAlpha = step[3]
       this.draw(step[0], step[1], true)
     })
-  }
-
-  saveInLocal() {
-    const d = {
-      "colors": window.colors,
-      "currColor": this.color,
-      "width": this.width,
-      "height": this.height,
-      "url": this.canvas.toDataURL(),
-      "steps": this.steps,
-      "redo_arr": this.redoArray,
-      "dim": window.dim,
-    }
-    localStorage.setItem("pc-canvas-data", JSON.stringify(d))
   }
 
   importImage(uri: string) {
@@ -747,6 +726,9 @@ globalThis.addEventListener("message", async (e: any) => {
         body: window.board.exportImage(),
       })
       break
+    }
+    case "update": {
+      window.board.update(e.data.bytes, e.data.edits)
     }
   }
 })
