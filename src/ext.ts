@@ -50,6 +50,7 @@ interface Edit {
   stroke: ReadonlyArray<[number, number]>
 }
 
+// deno-lint-ignore require-await
 async function readFile(uri: Uri): Promise<Uint8Array> {
   return uri.scheme === "untitled"
     ? new Uint8Array()

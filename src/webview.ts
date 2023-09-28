@@ -7,9 +7,9 @@ const vscode = acquireVsCodeApi()
 
 type Color = [number, number, number, number]
 
-var board: Board
-var colors: Color[]
-var dim: any
+let board: Board
+let colors: Color[]
+let dim: Popup
 
 function toCssColor(c: Color): string {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3]}%)`
@@ -43,10 +43,12 @@ class Board {
   h: number
   /** pixel data array */
   data: Color[][]
+  // deno-lint-ignore no-explicit-any
   steps: any[]
+  // deno-lint-ignore no-explicit-any
   redoArray: any[]
   prevPoint: Point | undefined
-  active: boolean = false
+  active = false
   color: Color = [0, 0, 0, 0]
   constructor(width: number, height: number) {
     this.canvas = document.querySelector("#canvas")!
@@ -200,7 +202,8 @@ class Board {
     })
   }
 
-  update(bytes: string, edits: {}[]) {}
+  // TODO(kt3k): implement
+  update(_bytes: string, _edits: Edit[]) {}
 
   clear() {
     this.ctx.fillStyle = "white"
@@ -245,7 +248,7 @@ class Board {
       pxctx.drawImage(uimg, 0, 0, this.width, this.height)
       for (let i = 0; i < this.width; i++) {
         for (let j = 0; j < this.height; j++) {
-          let avg = [0, 0, 0, 0] as Color
+          const avg = [0, 0, 0, 0] as Color
           const pix = pxctx.getImageData(i, j, 1, 1).data
           pix.forEach((x, k) => {
             avg[k] += x
@@ -318,36 +321,36 @@ function initPalette() {
 document.querySelector<HTMLElement>("#close")!.onclick = function () {
   const width = +document.querySelector<HTMLInputElement>("#width")!.value
   const height = +document.querySelector<HTMLInputElement>("#height")!.value
-  if (window.board == undefined) {
-    window.board = new Board(width, height)
+  if (board == undefined) {
+    board = new Board(width, height)
   }
-  window.board.canvas.width = 10 * width //display each pixel in 10 by 10pxs
-  window.board.canvas.height = 10 * height
-  window.board.width = width //Dimentions of x pixels
-  window.board.height = height //Dimentions of Y pixels
-  window.board.canvas.style.display = "block"
-  window.board.canvas.style.height =
-    Math.floor((height / width) * window.board.canvas.clientWidth) + "px"
-  window.board.w = +window.board.canvas.width
-  window.board.h = +window.board.canvas.height
-  window.board.ctx = window.board.canvas.getContext("2d")!
-  window.board.ctx.fillStyle = "white"
-  window.board.ctx.globalAlpha = 1
-  window.board.ctx.fillRect(0, 0, window.board.w, window.board.h)
-  window.board.data = [...Array(window.board.width)].map((_e) =>
-    Array(window.board.height).fill([255, 255, 255, 255])
+  board.canvas.width = 10 * width //display each pixel in 10 by 10pxs
+  board.canvas.height = 10 * height
+  board.width = width //Dimentions of x pixels
+  board.height = height //Dimentions of Y pixels
+  board.canvas.style.display = "block"
+  board.canvas.style.height =
+    Math.floor((height / width) * board.canvas.clientWidth) + "px"
+  board.w = +board.canvas.width
+  board.h = +board.canvas.height
+  board.ctx = board.canvas.getContext("2d")!
+  board.ctx.fillStyle = "white"
+  board.ctx.globalAlpha = 1
+  board.ctx.fillRect(0, 0, board.w, board.h)
+  board.data = [...Array(board.width)].map((_e) =>
+    Array(board.height).fill([255, 255, 255, 255])
   )
-  window.board.steps = []
-  window.board.redoArray = []
+  board.steps = []
+  board.redoArray = []
 
-  window.board.setcolor([0, 0, 0, 255])
-  window.dim.close()
+  board.setcolor([0, 0, 0, 255])
+  dim.close()
 }
 
 function newProject() {
   localStorage.removeItem("pc-canvas-data")
-  window.dim = new Popup("#popup")
-  window.colors = [
+  dim = new Popup("#popup")
+  colors = [
     [0, 0, 0, 255],
     [127, 127, 127, 255],
     [136, 0, 21, 255],
@@ -682,13 +685,34 @@ function act(clr: HTMLElement) {
   clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
 }
 
-globalThis.addEventListener("message", async (e: any) => {
+type Edit = {
+  x: number
+  y: number
+  color: Color
+} // TODO
+
+type MessageData = {
+  type: "init"
+  bytes: string
+} | {
+  type: "new"
+} | {
+  type: "getBytes"
+  requestId: number
+} | {
+  type: "update"
+  bytes: string
+  edits: Edit[]
+}
+
+type Message = { data: MessageData }
+globalThis.addEventListener("message", async (e: Message) => {
   console.log("got message event in pixeledit webview", e)
-  switch (e.data?.type) {
+  switch (e.data.type) {
     case "init": {
       // TODO(kt3k): Get colors from somewhere in disk
       // ex. ./pixeledit.json
-      window.colors = [
+      colors = [
         [0, 0, 0, 255],
         [127, 127, 127, 255],
         [136, 0, 21, 255],
@@ -710,7 +734,7 @@ globalThis.addEventListener("message", async (e: any) => {
         [112, 146, 190, 255],
         [200, 191, 231, 255],
       ]
-      window.board = await Board.import(e.data.bytes)
+      board = await Board.import(e.data.bytes)
       initPalette()
       break
     }
@@ -723,12 +747,12 @@ globalThis.addEventListener("message", async (e: any) => {
       vscode.postMessage({
         type: "response",
         requestId: e.data.requestId,
-        body: window.board.exportImage(),
+        body: board.exportImage(),
       })
       break
     }
     case "update": {
-      window.board.update(e.data.bytes, e.data.edits)
+      board.update(e.data.bytes, e.data.edits)
     }
   }
 })
