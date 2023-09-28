@@ -45,8 +45,10 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   )
 }
 
+type Color = [number, number, number, number]
+
 interface Edit {
-  color: string
+  color: Color
   stroke: ReadonlyArray<[number, number]>
 }
 
@@ -58,23 +60,19 @@ async function readFile(uri: Uri): Promise<Uint8Array> {
 }
 
 class PixelDoc implements CustomDocument {
-  #edits: Edit[] = []
-  #savedEdits: Edit[] = []
+  edits: Edit[] = []
+  #saved: Edit[] = []
 
   constructor(public readonly uri: Uri, public bytes: Uint8Array) {}
 
   dispose() {}
 
-  get edits() {
-    return this.#edits
-  }
-
   onSave() {
-    this.#savedEdits = [...this.#edits]
+    this.#saved = [...this.edits]
   }
 
   onRevert() {
-    this.#edits = [...this.#savedEdits]
+    this.edits = [...this.#saved]
   }
 }
 

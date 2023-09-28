@@ -7,6 +7,11 @@ const vscode = acquireVsCodeApi()
 
 type Color = [number, number, number, number]
 
+type Edit = {
+  stroke: ReadonlyArray<[number, number]>
+  color: Color
+} // TODO
+
 let board: Board
 let colors: Color[]
 let dim: Popup
@@ -116,6 +121,7 @@ class Board {
       this.active = true
       console.log("Active")
     })
+
     this.canvas.addEventListener("mouseup", (e) => {
       this.active = false
       if (this.prevPoint !== undefined) {
@@ -180,6 +186,7 @@ class Board {
       }
     }
   }
+
   erase(x: number, y: number) {
     const temp = this.color
     const tga = this.ctx.globalAlpha
@@ -188,11 +195,13 @@ class Board {
     this.setcolor(temp)
     this.ctx.globalAlpha = tga
   }
+
   setcolor(color: Color) {
     this.ctx.globalAlpha = 1
     this.color = color
     this.ctx.fillStyle = toCssColor(color)
   }
+
   setmode(i: number) {
     tools = [false, false, false, false, false, false]
     tools[i] = true
@@ -202,8 +211,19 @@ class Board {
     })
   }
 
-  // TODO(kt3k): implement
-  update(_bytes: string, _edits: Edit[]) {}
+  async update(bytes: string, edits: Edit[]) {
+    await this.importImage(bytes)
+    for (const edit of edits) {
+      this.edit(edit)
+    }
+  }
+
+  edit(edit: Edit) {
+    this.setcolor(edit.color)
+    for (const [x, y] of edit.stroke) {
+      this.draw(x, y)
+    }
+  }
 
   clear() {
     this.ctx.fillStyle = "white"
@@ -684,12 +704,6 @@ function act(clr: HTMLElement) {
   )
   clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
 }
-
-type Edit = {
-  x: number
-  y: number
-  color: Color
-} // TODO
 
 type MessageData = {
   type: "init"
