@@ -17,7 +17,7 @@ let colors: Color[]
 let dim: Popup
 
 function toCssColor(c: Color): string {
-  return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255 * 100}%)`
+  return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
 }
 
 const Tool = {
