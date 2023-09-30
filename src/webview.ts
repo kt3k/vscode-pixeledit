@@ -119,7 +119,6 @@ class Board {
     this.canvas.addEventListener("mousedown", (_e) => {
       this.prevPoint = undefined
       this.active = true
-      console.log("Active")
     })
 
     this.canvas.addEventListener("mouseup", (e) => {
@@ -163,12 +162,13 @@ class Board {
           this.draw(p.x, p.y)
         }
       } else {
+        // Pen tool
         this.prevPoint = new Point(x, y)
-        this.draw(x, y)
+        this.draw(x, y, true)
       }
     })
   }
-  draw(x: number, y: number, count = false) {
+  draw(x: number, y: number, isEdit = false) {
     if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
       this.data[x][y] = this.color
       this.ctx.fillRect(
@@ -177,12 +177,14 @@ class Board {
         Math.floor(this.w / this.width),
         Math.floor(this.h / this.height),
       )
-      if (
-        !count &&
-        JSON.stringify(this.steps[this.steps.length - 1]) !==
-          JSON.stringify([x, y, this.color, this.ctx.globalAlpha])
-      ) {
-        this.steps.push([x, y, this.color, this.ctx.globalAlpha])
+      if (isEdit) {
+        vscode.postMessage({
+          type: "edit",
+          edit: {
+            color: this.color,
+            stroke: [[x, y]],
+          },
+        })
       }
     }
   }
@@ -274,7 +276,7 @@ class Board {
             avg[k] += x
           })
           this.setcolor(avg)
-          this.draw(i, j)
+          this.draw(i, j, false)
         }
       }
     }
@@ -715,8 +717,10 @@ type MessageData = {
   requestId: number
 } | {
   type: "update"
-  bytes: string
-  edits: Edit[]
+  doc: {
+    bytes: string
+    edits: Edit[]
+  }
 }
 
 globalThis.addEventListener("message", async (e: { data: MessageData }) => {
@@ -765,7 +769,7 @@ globalThis.addEventListener("message", async (e: { data: MessageData }) => {
       break
     }
     case "update": {
-      board.update(e.data.bytes, e.data.edits)
+      board.update(e.data.doc.bytes, e.data.doc.edits)
     }
   }
 })

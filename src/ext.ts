@@ -95,11 +95,16 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     return new PixelDoc(uri, bytes)
   }
 
-  #updateWebview(uri: Uri, edits: Edit[], bytes?: Uint8Array) {
+  #updateWebview(uri: Uri, edits: Edit[], bytes: Uint8Array) {
     const key = uri.toString()
+    const dataUri = "data:image/png;base64," +
+      Buffer.from(bytes).toString("base64")
     for (const entry of this.#webviews) {
       if (entry.key === key) {
-        entry.webview.postMessage({ type: "update", body: { edits, bytes } })
+        entry.webview.postMessage({
+          type: "update",
+          doc: { edits, bytes: dataUri },
+        })
       }
     }
   }
@@ -134,11 +139,11 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
             label: "Change",
             undo: () => {
               doc.edits.pop()
-              this.#updateWebview(doc.uri, doc.edits)
+              this.#updateWebview(doc.uri, doc.edits, doc.bytes)
             },
             redo: () => {
               doc.edits.push(edit)
-              this.#updateWebview(doc.uri, doc.edits)
+              this.#updateWebview(doc.uri, doc.edits, doc.bytes)
             },
           })
           return
