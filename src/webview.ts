@@ -17,7 +17,7 @@ let colors: Color[]
 let dim: Popup
 
 function toCssColor(c: Color): string {
-  return `rgba(${c[0]},${c[1]},${c[2]},${c[3]}%)`
+  return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255 * 100}%)`
 }
 
 const Tool = {
@@ -719,8 +719,7 @@ type MessageData = {
   edits: Edit[]
 }
 
-type Message = { data: MessageData }
-globalThis.addEventListener("message", async (e: Message) => {
+globalThis.addEventListener("message", async (e: { data: MessageData }) => {
   console.log("got message event in pixeledit webview", e)
   switch (e.data.type) {
     case "init": {
