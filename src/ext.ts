@@ -76,6 +76,17 @@ class PixelDoc implements CustomDocument {
   }
 }
 
+type WebviewMessage = {
+  type: "ready"
+} | {
+  type: "response"
+  requestId: number
+  body: string
+} | {
+  type: "edit"
+  edit: Edit
+}
+
 class PixelEdit implements CustomEditorProvider<PixelDoc> {
   #uri: Uri
   #requestId = 1
@@ -127,12 +138,11 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
       webview.asWebviewUri(Uri.joinPath(this.#uri, "out/webview.js")),
     )
 
-    webview.onDidReceiveMessage((e) => {
-      console.log("onDidReceiveMessage", e)
+    webview.onDidReceiveMessage((e: WebviewMessage) => {
+      console.log("webview -> extension " + e.type, e)
       switch (e.type) {
         case "edit": {
-          const edit = e as Edit
-          doc.edits.push(edit)
+          doc.edits.push(e.edit)
 
           this.#changeEvent.fire({
             document: doc,
@@ -142,7 +152,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
               this.#updateWebview(doc.uri, doc.edits, doc.bytes)
             },
             redo: () => {
-              doc.edits.push(edit)
+              doc.edits.push(e.edit)
               this.#updateWebview(doc.uri, doc.edits, doc.bytes)
             },
           })

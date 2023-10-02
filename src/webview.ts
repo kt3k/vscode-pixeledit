@@ -8,8 +8,8 @@ const vscode = acquireVsCodeApi()
 type Color = [number, number, number, number]
 
 type Edit = {
-  stroke: ReadonlyArray<[number, number]>
   color: Color
+  stroke: ReadonlyArray<[number, number]>
 } // TODO
 
 let board: Board
@@ -216,14 +216,16 @@ class Board {
   async update(bytes: string, edits: Edit[]) {
     await this.importImage(bytes)
     for (const edit of edits) {
-      this.edit(edit)
+      this.applyEdit(edit)
     }
   }
 
-  edit(edit: Edit) {
+  applyEdit(edit: Edit) {
+    console.log("applyEdit", edit)
     this.setcolor(edit.color)
     for (const [x, y] of edit.stroke) {
-      this.draw(x, y)
+      console.log("draw", x, y)
+      this.draw(x, y, false)
     }
   }
 
@@ -256,30 +258,34 @@ class Board {
     })
   }
 
-  importImage(uri: string) {
+  importImage(uri: string): Promise<void> {
     const uimg = new Image()
     uimg.src = uri
     uimg.width = this.width
     uimg.height = this.height
-    uimg.onload = () => {
-      const pxc = document.createElement("canvas")
-      document.body.appendChild(pxc)
-      pxc.width = this.width
-      pxc.height = this.height
-      const pxctx = pxc.getContext("2d")!
-      pxctx.drawImage(uimg, 0, 0, this.width, this.height)
-      for (let i = 0; i < this.width; i++) {
-        for (let j = 0; j < this.height; j++) {
-          const avg = [0, 0, 0, 0] as Color
-          const pix = pxctx.getImageData(i, j, 1, 1).data
-          pix.forEach((x, k) => {
-            avg[k] += x
-          })
-          this.setcolor(avg)
-          this.draw(i, j, false)
+    return new Promise<void>((resolve, reject) => {
+      uimg.onload = () => {
+        const pxc = document.createElement("canvas")
+        document.body.appendChild(pxc)
+        pxc.width = this.width
+        pxc.height = this.height
+        const pxctx = pxc.getContext("2d")!
+        pxctx.drawImage(uimg, 0, 0, this.width, this.height)
+        for (let i = 0; i < this.width; i++) {
+          for (let j = 0; j < this.height; j++) {
+            const avg = [0, 0, 0, 0] as Color
+            const pix = pxctx.getImageData(i, j, 1, 1).data
+            pix.forEach((x, k) => {
+              avg[k] += x
+            })
+            this.setcolor(avg)
+            this.draw(i, j, false)
+          }
         }
+        resolve()
       }
-    }
+      uimg.onerror = (e) => reject(e)
+    })
   }
 
   static async import(uri: string): Promise<Board> {
@@ -724,7 +730,7 @@ type MessageData = {
 }
 
 globalThis.addEventListener("message", async (e: { data: MessageData }) => {
-  console.log("got message event in pixeledit webview", e)
+  console.log("extension -> webview " + e.data.type, e)
   switch (e.data.type) {
     case "init": {
       // TODO(kt3k): Get colors from somewhere in disk
