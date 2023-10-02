@@ -48,10 +48,6 @@ class Board {
   h: number
   /** pixel data array */
   data: Color[][]
-  // deno-lint-ignore no-explicit-any
-  steps: any[]
-  // deno-lint-ignore no-explicit-any
-  redoArray: any[]
   prevPoint: Point | undefined
   active = false
   color: Color = [0, 0, 0, 0]
@@ -73,8 +69,6 @@ class Board {
     this.data = [...Array(this.width)].map((_e) =>
       Array(this.height).fill([255, 255, 255, 0])
     )
-    this.steps = []
-    this.redoArray = []
 
     this.prevPoint = undefined
 
@@ -168,6 +162,7 @@ class Board {
       }
     })
   }
+
   draw(x: number, y: number, isEdit = false) {
     if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
       this.data[x][y] = this.color
@@ -221,10 +216,8 @@ class Board {
   }
 
   applyEdit(edit: Edit) {
-    console.log("applyEdit", edit)
     this.setcolor(edit.color)
     for (const [x, y] of edit.stroke) {
-      console.log("draw", x, y)
       this.draw(x, y, false)
     }
   }
@@ -237,25 +230,6 @@ class Board {
     )
     this.setcolor(this.color)
     this.setmode(Tool.pen)
-  }
-
-  undo() {
-    this.clear()
-    this.redoArray.push(this.steps.pop())
-    this.steps.forEach((step) => {
-      this.setcolor(step[2])
-      this.ctx.globalAlpha = step[3]
-      this.draw(step[0], step[1], true)
-    })
-  }
-
-  redo() {
-    this.steps.push(this.redoArray.pop())
-    this.steps.forEach((step) => {
-      this.setcolor(step[2])
-      this.ctx.globalAlpha = step[3]
-      this.draw(step[0], step[1], true)
-    })
   }
 
   importImage(uri: string): Promise<void> {
@@ -368,8 +342,6 @@ document.querySelector<HTMLElement>("#close")!.onclick = function () {
   board.data = [...Array(board.width)].map((_e) =>
     Array(board.height).fill([255, 255, 255, 255])
   )
-  board.steps = []
-  board.redoArray = []
 
   board.setcolor([0, 0, 0, 255])
   dim.close()
