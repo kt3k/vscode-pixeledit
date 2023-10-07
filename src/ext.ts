@@ -88,14 +88,11 @@ type WebviewMessage = {
 }
 
 class PixelEdit implements CustomEditorProvider<PixelDoc> {
-  #uri: Uri
   #requestId = 1
   #callbacks = new Map<number, (response: string) => void>()
   #webviews = new Set<{ key: string; webview: Webview }>()
 
-  constructor(uri: Uri) {
-    this.#uri = uri
-  }
+  constructor(public uri: Uri) {}
 
   async openCustomDocument(
     uri: Uri,
@@ -135,7 +132,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
     webview.html = html(
-      webview.asWebviewUri(Uri.joinPath(this.#uri, "out/webview.js")),
+      webview.asWebviewUri(Uri.joinPath(this.uri, "out/webview.js")),
     )
 
     webview.onDidReceiveMessage((e: WebviewMessage) => {
