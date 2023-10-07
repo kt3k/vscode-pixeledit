@@ -209,6 +209,7 @@ class Board {
   }
 
   async update(bytes: string, edits: Edit[]) {
+    this.ctx.clearRect(0, 0, this.w, this.h)
     await this.importImage(bytes)
     for (const edit of edits) {
       this.applyEdit(edit)
@@ -223,7 +224,7 @@ class Board {
   }
 
   clear() {
-    this.ctx.fillStyle = "white"
+    this.ctx.fillStyle = "rgba(0,0,0,0)"
     this.ctx.fillRect(0, 0, this.w, this.h)
     this.data = [...Array(this.width)].map((_e) =>
       Array(this.height).fill([255, 255, 255, 255])
