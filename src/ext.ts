@@ -247,7 +247,6 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
 const html = (scriptUri: Uri) => /* html */ `
 <html>
   <head>
-    <title>Pixel Edit</title>
     <style>${style}</style>
   </head>
   <body>
