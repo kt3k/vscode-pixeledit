@@ -262,25 +262,19 @@ const html = (scriptUri: Uri) => /* html */ `
     </div>
     <canvas id="canvas"></canvas>
     <div id="toolbar">
-      <span class="item" onclick="board.setmode(0)" style="background-color: grey">
-        <i class="fas fa-pencil-alt"></i>
-      </span>
-      <span class="item" onclick="board.setmode(1)"><i class="fas fa-eraser"></i></span>
-      <span class="item" onclick="board.setmode(2)"><i class="fas fa-fill"></i></span>
-      <span class="item" onclick="board.setmode(3)"><i class="fas fa-slash"></i></span>
-      <span class="item" onclick="board.setmode(4)"><i class="far fa-circle"></i></span>
-      <span class="item" onclick="board.setmode(5)"><i class="far fa-circle" style="transform: rotateX(45deg)"></i></span>
-      <span class="item" onclick="board.undo()"><i class="fas fa-undo"></i></span>
-      <span class="item" onclick="board.redo()"><i class="fas fa-redo"></i></span>
-      <span class="item" onclick="board.clear()"><i class="fas fa-trash"></i></span>
-      <span class="item" onclick="board.addImage()"><i class="fa fa-upload"></i></span>
+      <span class="item" onclick="board.setmode(0)">✏️</span>
+      <span class="item" onclick="board.setmode(1)">消</span>
+      <span class="item" onclick="board.setmode(2)">塗</span>
+      <span class="item" onclick="board.setmode(3)">線</span>
+      <span class="item" onclick="board.setmode(4)">円</span>
+      <span class="item" onclick="board.setmode(5)">楕</span>
+      <span class="item" onclick="board.undo()">◀️</span>
+      <span class="item" onclick="board.redo()">▶️</span>
+      <span class="item" onclick="board.clear()">🗑️</span>
+      <span class="item"></span>
     </div>
     <div id="palette"></div>
   </body>
-  <script
-    src="https://kit.fontawesome.com/473e8f3a80.js"
-    crossorigin="anonymous"
-  ></script>
   <script src="${scriptUri}"></script>
 </html>
 `
@@ -485,38 +479,5 @@ path {
 .menu li a {
   text-decoration: none;
   color: white;
-}
-
-@media only screen and (max-width: 600px) {
-  #toolbar {
-    position: fixed;
-    top: 100%;
-    left: 50%;
-    min-width: 100%;
-    transform: translate(-50%, -100%);
-    padding: 0px;
-    color: white;
-  }
-  #palette {
-    position: fixed;
-    top: 0%;
-    transform: translateY(0%);
-    min-width: 100%;
-    padding: 0px;
-    color: white;
-  }
-  #toolbar .item {
-    width: 20px;
-    height: 20px;
-  }
-  #palette .item {
-    padding: 15px;
-  }
-  .menubtn {
-    top: 70px;
-  }
-  .menu {
-    top: 110px;
-  }
 }
 `
