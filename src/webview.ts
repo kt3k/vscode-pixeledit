@@ -63,8 +63,7 @@ class Board {
     this.w = +this.canvas.width
     this.h = +this.canvas.height
     this.ctx = this.canvas.getContext("2d")!
-    this.ctx.fillStyle = "rgba(255,255,255,0%)"
-    this.ctx.globalAlpha = 1
+    this.ctx.fillStyle = "rgba(255,255,255,0)"
     this.ctx.fillRect(0, 0, this.w, this.h)
     this.data = [...Array(this.width)].map((_e) =>
       Array(this.height).fill([255, 255, 255, 0])
@@ -130,11 +129,9 @@ class Board {
         filler(x, y, this.data[x][y])
       } else if (tools[Tool.eraser]) {
         const temp = this.color
-        const tga = this.ctx.globalAlpha
         this.setcolor([255, 255, 255, 255])
         this.draw(x, y)
         this.setcolor(temp)
-        this.ctx.globalAlpha = tga
       } else if (tools[Tool.line]) {
         lc.push(new Point(x, y))
         if (lc.length == 2) {
@@ -186,15 +183,12 @@ class Board {
 
   erase(x: number, y: number) {
     const temp = this.color
-    const tga = this.ctx.globalAlpha
-    this.setcolor([255, 255, 255, 255])
-    this.draw(x, y)
+    this.setcolor([0, 0, 0, 0])
+    this.draw(x, y, true)
     this.setcolor(temp)
-    this.ctx.globalAlpha = tga
   }
 
   setcolor(color: Color) {
-    this.ctx.globalAlpha = 1
     this.color = color
     this.ctx.fillStyle = toCssColor(color)
   }
@@ -241,7 +235,6 @@ class Board {
     return new Promise<void>((resolve, reject) => {
       uimg.onload = () => {
         const pxc = document.createElement("canvas")
-        document.body.appendChild(pxc)
         pxc.width = this.width
         pxc.height = this.height
         const pxctx = pxc.getContext("2d")!
@@ -312,7 +305,7 @@ function initPalette() {
   document.querySelector("#palette")!.innerHTML = colors.map((x) =>
     `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${
       x[2]
-    })" onclick="board.setcolor([${x}]);act(this);" oncontextmenu="board.setcolor([${x}]);act(this);board.ctx.globalAlpha=+prompt('Transparency(0-1)?')"></span>`
+    })" onclick="board.setcolor([${x}]);act(this);"></span>`
   ).join("\n")
 
   document.querySelector("#palette")!.addEventListener(
@@ -338,7 +331,6 @@ document.querySelector<HTMLElement>("#close")!.onclick = function () {
   board.h = +board.canvas.height
   board.ctx = board.canvas.getContext("2d")!
   board.ctx.fillStyle = "white"
-  board.ctx.globalAlpha = 1
   board.ctx.fillRect(0, 0, board.w, board.h)
   board.data = [...Array(board.width)].map((_e) =>
     Array(board.height).fill([255, 255, 255, 255])
