@@ -3,14 +3,10 @@
 
 /// <reference lib="dom" />
 
+type Color = import("./types").Color
+type Edit = import("./types").Edit
+
 const vscode = acquireVsCodeApi()
-
-type Color = [number, number, number, number]
-
-type Edit = {
-  color: Color
-  stroke: ReadonlyArray<[number, number]>
-} // TODO
 
 let board: Board
 let colors: Color[]
@@ -241,12 +237,8 @@ class Board {
         pxctx.drawImage(uimg, 0, 0, this.width, this.height)
         for (let i = 0; i < this.width; i++) {
           for (let j = 0; j < this.height; j++) {
-            const avg = [0, 0, 0, 0] as Color
-            const pix = pxctx.getImageData(i, j, 1, 1).data
-            pix.forEach((x, k) => {
-              avg[k] += x
-            })
-            this.setcolor(avg)
+            const pixel = pxctx.getImageData(i, j, 1, 1).data
+            this.setcolor([pixel[0], pixel[1], pixel[2], pixel[3]])
             this.draw(i, j, false)
           }
         }

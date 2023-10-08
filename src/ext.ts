@@ -16,6 +16,7 @@ import {
   workspace,
 } from "vscode"
 import { Buffer } from "node:buffer"
+import type { Edit } from "./types"
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
@@ -45,13 +46,6 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   )
 }
 
-type Color = [number, number, number, number]
-
-interface Edit {
-  color: Color
-  stroke: ReadonlyArray<[number, number]>
-}
-
 // deno-lint-ignore require-await
 async function readFile(uri: Uri): Promise<Uint8Array> {
   return uri.scheme === "untitled"
@@ -59,18 +53,17 @@ async function readFile(uri: Uri): Promise<Uint8Array> {
     : workspace.fs.readFile(uri)
 }
 
+/** The document */
 class PixelDoc implements CustomDocument {
+  /** The current edits */
   edits: Edit[] = []
+  /** The saved edits */
   #saved: Edit[] = []
-
   constructor(public readonly uri: Uri, public bytes: Uint8Array) {}
-
   dispose() {}
-
   onSave() {
     this.#saved = [...this.edits]
   }
-
   onRevert() {
     this.edits = [...this.#saved]
   }
