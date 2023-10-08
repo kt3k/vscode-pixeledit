@@ -8,12 +8,30 @@ export type Edit = {
 }
 
 export type WebviewMessage = {
-  type: "ready"
+  readonly type: "ready"
 } | {
-  type: "response"
-  requestId: number
-  body: string
+  readonly type: "response"
+  readonly requestId: number
+  readonly body: string
 } | {
-  type: "edit"
-  edit: Edit
+  readonly type: "edit"
+  readonly edit: Edit
+}
+
+export type ExtensionMessageEvent = MessageEvent<ExtensionMessageData>
+
+export type ExtensionMessageData = {
+  readonly type: "init"
+  readonly bytes: string
+} | {
+  readonly type: "new"
+} | {
+  readonly type: "getBytes"
+  readonly requestId: number
+} | {
+  readonly type: "update"
+  readonly doc: {
+    readonly bytes: string
+    readonly edits: Edit[]
+  }
 }

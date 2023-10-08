@@ -16,7 +16,7 @@ import {
   workspace,
 } from "vscode"
 import { Buffer } from "node:buffer"
-import type { Edit, WebviewMessage } from "./types"
+import type { Edit, ExtensionMessageData, WebviewMessage } from "./types"
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
@@ -44,6 +44,10 @@ export function activate({ subscriptions, extensionUri }: ExtensionContext) {
       new PixelEdit(extensionUri),
     ),
   )
+}
+
+function postMessage(webview: Webview, message: ExtensionMessageData) {
+  webview.postMessage(message)
 }
 
 // deno-lint-ignore require-await
@@ -91,7 +95,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
       Buffer.from(bytes).toString("base64")
     for (const entry of this.#webviews) {
       if (entry.key === key) {
-        entry.webview.postMessage({
+        postMessage(entry.webview, {
           type: "update",
           doc: { edits, bytes: dataUri },
         })
@@ -143,19 +147,12 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
         }
         case "ready": {
           if (doc.uri.scheme === "untitled") {
-            webview.postMessage({
-              type: "new",
-              untitled: true,
-              editable: true,
-            })
+            postMessage(webview, { type: "new" })
           } else {
-            webview.postMessage({
+            postMessage(webview, {
               type: "init",
               bytes: "data:image/png;base64," +
                 Buffer.from(doc.bytes).toString("base64"),
-              editable: workspace.fs.isWritableFileSystem(
-                doc.uri.scheme,
-              ),
             })
           }
         }

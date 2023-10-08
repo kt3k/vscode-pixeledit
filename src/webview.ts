@@ -6,6 +6,7 @@
 type Color = import("./types").Color
 type Edit = import("./types").Edit
 type WebviewMessage = import("./types").WebviewMessage
+type ExtensionMessageEvent = import("./types").ExtensionMessageEvent
 
 const vscode = acquireVsCodeApi()
 
@@ -681,7 +682,7 @@ type MessageData = {
   }
 }
 
-globalThis.addEventListener("message", async (e: { data: MessageData }) => {
+globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   console.log("extension -> webview " + e.data.type, e)
   switch (e.data.type) {
     case "init": {
