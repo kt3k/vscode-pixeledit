@@ -16,7 +16,7 @@ import {
   workspace,
 } from "vscode"
 import { Buffer } from "node:buffer"
-import type { Edit } from "./types"
+import type { Edit, WebviewMessage } from "./types"
 
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
@@ -67,17 +67,6 @@ class PixelDoc implements CustomDocument {
   onRevert() {
     this.edits = [...this.#saved]
   }
-}
-
-type WebviewMessage = {
-  type: "ready"
-} | {
-  type: "response"
-  requestId: number
-  body: string
-} | {
-  type: "edit"
-  edit: Edit
 }
 
 class PixelEdit implements CustomEditorProvider<PixelDoc> {
