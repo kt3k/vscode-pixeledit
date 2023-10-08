@@ -64,6 +64,13 @@ class PixelDoc implements CustomDocument {
   /** The saved edits */
   #saved: Edit[] = []
   constructor(public readonly uri: Uri, public bytes: Uint8Array) {}
+  get key() {
+    return this.uri.toString()
+  }
+  get dataUri() {
+    return "data:image/png;base64," +
+      Buffer.from(this.bytes).toString("base64")
+  }
   dispose() {}
   onSave() {
     this.#saved = [...this.edits]
@@ -89,16 +96,13 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     return new PixelDoc(uri, bytes)
   }
 
-  #updateWebview(uri: Uri, edits: Edit[], bytes: Uint8Array) {
-    const key = uri.toString()
-    const dataUri = "data:image/png;base64," +
-      Buffer.from(bytes).toString("base64")
+  #updateWebview(doc: PixelDoc) {
+    const key = doc.key
+    const dataUri = doc.dataUri
+    const edits = doc.edits
     for (const entry of this.#webviews) {
       if (entry.key === key) {
-        postMessage(entry.webview, {
-          type: "update",
-          doc: { edits, bytes: dataUri },
-        })
+        postMessage(entry.webview, { type: "update", doc: { edits, dataUri } })
       }
     }
   }
@@ -108,7 +112,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     panel: WebviewPanel,
     _token: CancellationToken,
   ) {
-    const entry = { key: doc.uri.toString(), webview: panel.webview }
+    const entry = { key: doc.key, webview: panel.webview }
     this.#webviews.add(entry)
     panel.onDidDispose(() => {
       this.#webviews.delete(entry)
@@ -132,11 +136,11 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
             label: "Change",
             undo: () => {
               doc.edits.pop()
-              this.#updateWebview(doc.uri, doc.edits, doc.bytes)
+              this.#updateWebview(doc)
             },
             redo: () => {
               doc.edits.push(e.edit)
-              this.#updateWebview(doc.uri, doc.edits, doc.bytes)
+              this.#updateWebview(doc)
             },
           })
           return
@@ -151,8 +155,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
           } else {
             postMessage(webview, {
               type: "init",
-              bytes: "data:image/png;base64," +
-                Buffer.from(doc.bytes).toString("base64"),
+              dataUri: doc.dataUri,
             })
           }
         }
@@ -176,7 +179,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     dest: Uri,
     cancel: CancellationToken,
   ) {
-    const key = doc.uri.toString()
+    const key = doc.key
     const entry = [...this.#webviews].find((entry) => entry.key === key)
     if (!entry) {
       throw new Error("Could not find webview to request bytes for")
@@ -196,7 +199,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
   async revertCustomDocument(doc: PixelDoc) {
     doc.bytes = await readFile(doc.uri)
     doc.onRevert()
-    this.#updateWebview(doc.uri, doc.edits, doc.bytes)
+    this.#updateWebview(doc)
   }
 
   async backupCustomDocument(

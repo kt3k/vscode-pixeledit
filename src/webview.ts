@@ -183,6 +183,10 @@ class Board {
     }
   }
 
+  clear() {
+    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
+  }
+
   erase(x: number, y: number) {
     const temp = this.color
     this.setcolor([0, 0, 0, 0])
@@ -204,9 +208,9 @@ class Board {
     })
   }
 
-  async update(bytes: string, edits: Edit[]) {
+  async update(dataUri: string, edits: Edit[]) {
     this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
-    await this.importImage(bytes)
+    await this.importImage(dataUri)
     for (const edit of edits) {
       this.applyEdit(edit)
     }
@@ -710,7 +714,7 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
         [112, 146, 190, 255],
         [200, 191, 231, 255],
       ]
-      board = await Board.import(e.data.bytes)
+      board = await Board.import(e.data.dataUri)
       initPalette()
       break
     }
@@ -728,7 +732,7 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
       break
     }
     case "update": {
-      board.update(e.data.doc.bytes, e.data.doc.edits)
+      board.update(e.data.doc.dataUri, e.data.doc.edits)
     }
   }
 })
