@@ -35,13 +35,13 @@ class Board {
   /** The canvas context */
   ctx: CanvasRenderingContext2D
   /** Image data width */
-  width: number
+  dataWidth: number
   /** Image data height */
-  height: number
+  dataHeight: number
   /** Canvas element width */
-  w: number
+  canvasWidth: number
   /** Canvas element height */
-  h: number
+  canvasHeight: number
   /** pixel data array */
   data: Color[][]
   prevPoint: Point | undefined
@@ -51,18 +51,18 @@ class Board {
     this.canvas = document.querySelector("#canvas")!
     this.canvas.width = 10 * width
     this.canvas.height = 10 * height
-    this.width = width
-    this.height = height
+    this.dataWidth = width
+    this.dataHeight = height
     this.canvas.style.display = "block"
     this.canvas.style.height =
       Math.floor((height / width) * this.canvas.clientWidth) + "px"
-    this.w = +this.canvas.width
-    this.h = +this.canvas.height
+    this.canvasWidth = +this.canvas.width
+    this.canvasHeight = +this.canvas.height
     this.ctx = this.canvas.getContext("2d")!
     this.ctx.fillStyle = "rgba(255,255,255,0)"
-    this.ctx.fillRect(0, 0, this.w, this.h)
-    this.data = [...Array(this.width)].map((_e) =>
-      Array(this.height).fill([255, 255, 255, 0])
+    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+    this.data = [...Array(this.dataWidth)].map((_e) =>
+      Array(this.dataHeight).fill([255, 255, 255, 0])
     )
 
     this.prevPoint = undefined
@@ -74,8 +74,8 @@ class Board {
         const rect = this.canvas.getBoundingClientRect()
         let x = e.clientX - rect.left
         let y = e.clientY - rect.top
-        x = Math.floor(this.width * x / this.canvas.clientWidth)
-        y = Math.floor(this.height * y / this.canvas.clientHeight)
+        x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
+        y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
         if (tools[Tool.pen]) {
           const p = new Point(x, y)
           if (!p.equals(this.prevPoint)) {
@@ -92,8 +92,8 @@ class Board {
       const rect = this.canvas.getBoundingClientRect()
       let x = e.touches[0].clientX - rect.left
       let y = e.touches[0].clientY - rect.top
-      x = Math.floor(this.width * x / this.canvas.clientWidth)
-      y = Math.floor(this.height * y / this.canvas.clientHeight)
+      x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
+      y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
       if (tools[Tool.pen]) {
         const p = new Point(x, y)
         if (!p.equals(this.prevPoint)) {
@@ -119,8 +119,8 @@ class Board {
       const rect = this.canvas.getBoundingClientRect()
       let x = e.clientX - rect.left
       let y = e.clientY - rect.top
-      x = Math.floor(this.width * x / this.canvas.clientWidth)
-      y = Math.floor(this.height * y / this.canvas.clientHeight)
+      x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
+      y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
       if (tools[Tool.fillBucket]) {
         filler(x, y, this.data[x][y])
       } else if (tools[Tool.eraser]) {
@@ -157,13 +157,13 @@ class Board {
   }
 
   draw(x: number, y: number, isEdit = false) {
-    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+    if (x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight) {
       this.data[x][y] = this.color
       this.ctx.fillRect(
-        Math.floor(x * (this.w / this.width)),
-        Math.floor(y * (this.h / this.height)),
-        Math.floor(this.w / this.width),
-        Math.floor(this.h / this.height),
+        Math.floor(x * (this.canvasWidth / this.dataWidth)),
+        Math.floor(y * (this.canvasHeight / this.dataHeight)),
+        Math.floor(this.canvasWidth / this.dataWidth),
+        Math.floor(this.canvasHeight / this.dataHeight),
       )
       if (isEdit) {
         vscode.postMessage({
@@ -199,7 +199,7 @@ class Board {
   }
 
   async update(bytes: string, edits: Edit[]) {
-    this.ctx.clearRect(0, 0, this.w, this.h)
+    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
     await this.importImage(bytes)
     for (const edit of edits) {
       this.applyEdit(edit)
@@ -213,30 +213,20 @@ class Board {
     }
   }
 
-  clear() {
-    this.ctx.fillStyle = "rgba(0,0,0,0)"
-    this.ctx.fillRect(0, 0, this.w, this.h)
-    this.data = [...Array(this.width)].map((_e) =>
-      Array(this.height).fill([255, 255, 255, 255])
-    )
-    this.setcolor(this.color)
-    this.setmode(Tool.pen)
-  }
-
   importImage(uri: string): Promise<void> {
     const uimg = new Image()
     uimg.src = uri
-    uimg.width = this.width
-    uimg.height = this.height
+    uimg.width = this.dataWidth
+    uimg.height = this.dataHeight
     return new Promise<void>((resolve, reject) => {
       uimg.onload = () => {
         const pxc = document.createElement("canvas")
-        pxc.width = this.width
-        pxc.height = this.height
+        pxc.width = this.dataWidth
+        pxc.height = this.dataHeight
         const pxctx = pxc.getContext("2d")!
-        pxctx.drawImage(uimg, 0, 0, this.width, this.height)
-        for (let i = 0; i < this.width; i++) {
-          for (let j = 0; j < this.height; j++) {
+        pxctx.drawImage(uimg, 0, 0, this.dataWidth, this.dataHeight)
+        for (let i = 0; i < this.dataWidth; i++) {
+          for (let j = 0; j < this.dataHeight; j++) {
             const pixel = pxctx.getImageData(i, j, 1, 1).data
             this.setcolor([pixel[0], pixel[1], pixel[2], pixel[3]])
             this.draw(i, j, false)
@@ -257,8 +247,8 @@ class Board {
 
   exportImage() {
     const canvas = document.createElement("canvas")
-    canvas.width = this.width
-    canvas.height = this.height
+    canvas.width = this.dataWidth
+    canvas.height = this.dataHeight
     const ctx = canvas.getContext("2d")!
     this.data.forEach((row, i) => {
       row.forEach((color, j) => {
@@ -314,18 +304,18 @@ document.querySelector<HTMLElement>("#close")!.onclick = function () {
   }
   board.canvas.width = 10 * width //display each pixel in 10 by 10pxs
   board.canvas.height = 10 * height
-  board.width = width //Dimentions of x pixels
-  board.height = height //Dimentions of Y pixels
+  board.dataWidth = width //Dimentions of x pixels
+  board.dataHeight = height //Dimentions of Y pixels
   board.canvas.style.display = "block"
   board.canvas.style.height =
     Math.floor((height / width) * board.canvas.clientWidth) + "px"
-  board.w = +board.canvas.width
-  board.h = +board.canvas.height
+  board.canvasWidth = +board.canvas.width
+  board.canvasHeight = +board.canvas.height
   board.ctx = board.canvas.getContext("2d")!
   board.ctx.fillStyle = "white"
-  board.ctx.fillRect(0, 0, board.w, board.h)
-  board.data = [...Array(board.width)].map((_e) =>
-    Array(board.height).fill([255, 255, 255, 255])
+  board.ctx.fillRect(0, 0, board.canvasWidth, board.canvasHeight)
+  board.data = [...Array(board.dataWidth)].map((_e) =>
+    Array(board.dataHeight).fill([255, 255, 255, 255])
   )
 
   board.setcolor([0, 0, 0, 255])
@@ -359,7 +349,7 @@ function newProject() {
   ]
 }
 function filler(x: number, y: number, cc: Color) {
-  if (x >= 0 && x < board.width && y >= 0 && y < board.height) {
+  if (x >= 0 && x < board.dataWidth && y >= 0 && y < board.dataHeight) {
     if (
       JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
       JSON.stringify(board.data[x][y]) != JSON.stringify(board.color)
