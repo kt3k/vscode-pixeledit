@@ -29,10 +29,8 @@ const Tool = {
   "line": 3,
   "circle": 4,
   "ellipse": 5,
-  "undo": 7,
-  "redo": 8,
-  "clearCanvas": 9,
 }
+
 let tools = [true, false, false, false, false, false]
 let lc: Point[] = []
 class Board {

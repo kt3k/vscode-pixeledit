@@ -188,7 +188,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     const dataUriPromise = new Promise<string>((resolve) =>
       this.#callbacks.set(requestId, resolve)
     )
-    entry.webview.postMessage({ type: "getBytes", requestId })
+    postMessage(entry.webview, { type: "getBytes", requestId })
     const dataUri = await dataUriPromise
     if (cancel.isCancellationRequested) {
       return
@@ -246,10 +246,6 @@ const html = (scriptUri: Uri) => /* html */ `
       <span class="item" onclick="board.setmode(3)">線</span>
       <span class="item" onclick="board.setmode(4)">円</span>
       <span class="item" onclick="board.setmode(5)">楕</span>
-      <span class="item" onclick="board.undo()">◀️</span>
-      <span class="item" onclick="board.redo()">▶️</span>
-      <span class="item" onclick="board.clear()">🗑️</span>
-      <span class="item"></span>
     </div>
     <div id="palette"></div>
   </body>
