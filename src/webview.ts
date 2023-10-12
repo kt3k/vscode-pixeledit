@@ -292,16 +292,13 @@ class Popup {
 }
 
 function initPalette() {
-  document.querySelector("#palette")!.innerHTML = colors.map((x) =>
-    `<span class="item" style="background-color: rgb(${x[0]},${x[1]},${
-      x[2]
-    })" onclick="board.setcolor([${x}]);act(this);"></span>`
+  const palette = document.querySelector("#palette")!
+  palette.innerHTML = colors.map((x) =>
+    `<span class="item" style="background-color: ${
+      toCssColor(x)
+    }" onclick="board.setcolor([${x}]);act(this);"></span>`
   ).join("\n")
-
-  document.querySelector("#palette")!.addEventListener(
-    "contextmenu",
-    (e) => e.preventDefault(),
-  )
+  ;(palette.firstChild! as any).click()
 }
 
 document.querySelector<HTMLElement>("#close")!.onclick = function () {
@@ -665,7 +662,7 @@ function act(clr: HTMLElement) {
   document.querySelectorAll<HTMLElement>("#palette .item").forEach((x) =>
     x.style.boxShadow = ""
   )
-  clr.style.boxShadow = "10px 10px 10px 10px rgba(0,0,0,0.5)"
+  clr.style.boxShadow = "0px 0px 1px 1px white inset"
 }
 
 type MessageData = {
