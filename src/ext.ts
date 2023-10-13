@@ -238,6 +238,7 @@ const html = (scriptUri: Uri) => /* html */ `
       />
       <button id="close">OK</button>
     </div>
+    <canvas id="canvas-mini"></canvas>
     <canvas id="canvas"></canvas>
     <div id="toolbar">
       <span class="item" onclick="board.setmode(0)">✏️</span>

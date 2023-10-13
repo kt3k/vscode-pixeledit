@@ -36,8 +36,12 @@ let lc: Point[] = []
 class Board {
   /** The canvas */
   canvas: HTMLCanvasElement
+  /** The canvas */
+  miniCanvas: HTMLCanvasElement
   /** The canvas context */
   ctx: CanvasRenderingContext2D
+  /** The canvas context */
+  miniCtx: CanvasRenderingContext2D
   /** Image data width */
   dataWidth: number
   /** Image data height */
@@ -51,19 +55,25 @@ class Board {
   prevPoint: Point | undefined
   active = false
   color: Color = [0, 0, 0, 0]
-  constructor(width: number, height: number) {
+  constructor(dataWidth: number, dataHeight: number) {
     this.canvas = document.querySelector("#canvas")!
-    this.canvas.width = 10 * width
-    this.canvas.height = 10 * height
-    this.dataWidth = width
-    this.dataHeight = height
+    this.miniCanvas = document.querySelector("#canvas-mini")!
+    this.canvas.width = 10 * dataWidth
+    this.canvas.height = 10 * dataHeight
+    this.miniCanvas.width = dataWidth
+    this.miniCanvas.height = dataHeight
+    this.dataWidth = dataWidth
+    this.dataHeight = dataHeight
     this.canvas.style.display = "block"
     this.canvas.style.height =
-      Math.floor((height / width) * this.canvas.clientWidth) + "px"
+      Math.floor((dataHeight / dataWidth) * this.canvas.clientWidth) + "px"
     this.canvasWidth = +this.canvas.width
     this.canvasHeight = +this.canvas.height
     this.ctx = this.canvas.getContext("2d")!
+    this.miniCtx = this.miniCanvas.getContext("2d")!
     this.ctx.fillStyle = "rgba(255,255,255,0)"
+    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+    this.miniCtx.fillStyle = "rgba(255,255,255,0)"
     this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
     this.data = [...Array(this.dataWidth)].map((_e) =>
       Array(this.dataHeight).fill([255, 255, 255, 0])
@@ -169,6 +179,7 @@ class Board {
         Math.floor(this.canvasWidth / this.dataWidth),
         Math.floor(this.canvasHeight / this.dataHeight),
       )
+      this.miniCtx.fillRect(x, y, 1, 1)
       if (isEdit) {
         postMessageToExtention({
           type: "edit",
@@ -194,7 +205,7 @@ class Board {
 
   setcolor(color: Color) {
     this.color = color
-    this.ctx.fillStyle = toCssColor(color)
+    this.miniCtx.fillStyle = this.ctx.fillStyle = toCssColor(color)
   }
 
   setmode(i: number) {
