@@ -56,6 +56,8 @@ class Board {
   active = false
   color: Color = [0, 0, 0, 0]
   constructor(dataWidth: number, dataHeight: number) {
+    document.querySelector<HTMLElement>(".mini-canvas-wrapper")!.classList
+      .toggle("hidden", false)
     this.canvas = document.querySelector("#canvas")!
     this.miniCanvas = document.querySelector("#canvas-mini")!
     this.canvas.width = 10 * dataWidth

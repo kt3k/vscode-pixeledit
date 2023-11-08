@@ -239,8 +239,10 @@ const html = (scriptUri: Uri) => /* html */ `
       <button id="close">OK</button>
     </div>
     <div class="board">
-      <div class="mini-canvas-wrapper">
-        <canvas class="mini-canvas" id="canvas-mini"></canvas>
+      <div class="mini-canvas-wrapper hidden">
+        <span>
+          <canvas class="mini-canvas" id="canvas-mini"></canvas>
+        </span>
       </div>
       <canvas id="canvas"></canvas>
       <div id="toolbar">
@@ -260,7 +262,6 @@ const html = (scriptUri: Uri) => /* html */ `
 
 const style = /* css */ `
 body {
-  background-color: #232125;
   margin: 0px;
 }
 
@@ -341,6 +342,12 @@ body {
   align-items: center;
   justify-content: center;
   margin-top: 16px;
+}
+
+.board .mini-canvas-wrapper span {
+  padding: 16px;
+  background-color: #554455;
+  border-radius: 50%;
 }
 
 #toolbar {
@@ -434,5 +441,9 @@ path {
 .menu li a {
   text-decoration: none;
   color: white;
+}
+
+.hidden {
+  display: none !important;
 }
 `
