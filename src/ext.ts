@@ -238,17 +238,21 @@ const html = (scriptUri: Uri) => /* html */ `
       />
       <button id="close">OK</button>
     </div>
-    <canvas id="canvas-mini"></canvas>
-    <canvas id="canvas"></canvas>
-    <div id="toolbar">
-      <span class="item" onclick="board.setmode(0)">✏️</span>
-      <span class="item" onclick="board.setmode(1)">消</span>
-      <span class="item" onclick="board.setmode(2)">塗</span>
-      <span class="item" onclick="board.setmode(3)">線</span>
-      <span class="item" onclick="board.setmode(4)">円</span>
-      <span class="item" onclick="board.setmode(5)">楕</span>
+    <div class="board">
+      <div class="mini-canvas-wrapper">
+        <canvas class="mini-canvas" id="canvas-mini"></canvas>
+      </div>
+      <canvas id="canvas"></canvas>
+      <div id="toolbar">
+        <span class="item" onclick="board.setmode(0)">✏️</span>
+        <span class="item" onclick="board.setmode(1)">消</span>
+        <span class="item" onclick="board.setmode(2)">塗</span>
+        <span class="item" onclick="board.setmode(3)">線</span>
+        <span class="item" onclick="board.setmode(4)">円</span>
+        <span class="item" onclick="board.setmode(5)">楕</span>
+      </div>
+      <div id="palette"></div>
     </div>
-    <div id="palette"></div>
   </body>
   <script src="${scriptUri}"></script>
 </html>
@@ -361,6 +365,13 @@ body {
   image-rendering: -webkit-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.board .mini-canvas-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
 }
 
 #toolbar {
