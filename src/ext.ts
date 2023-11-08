@@ -264,8 +264,7 @@ body {
   margin: 0px;
 }
 
-#popup,
-#frames {
+#popup {
   background-color: #332f35;
   color: white;
   font-size: 20px;
@@ -287,36 +286,6 @@ body {
 }
 #popup h3 {
   line-height: 30px;
-}
-
-#frames {
-  display: none;
-  padding: 10px;
-}
-
-#frames #gallery {
-  padding: 10px 10px 10px 10px;
-  overflow: hidden;
-  white-space: nowrap;
-  scroll-behavior: smooth;
-}
-
-#frames .btn {
-  position: absolute;
-  background-color: rgba(255, 255, 255, 0.5);
-  color: black;
-  font-size: 20px;
-  padding: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-radius: 50%;
-  z-index: 2;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-}
-
-#frames img {
-  width: 100px;
-  margin: 10px;
 }
 
 #width,
