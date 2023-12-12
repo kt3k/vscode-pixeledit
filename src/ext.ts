@@ -249,9 +249,6 @@ const html = (scriptUri: Uri) => /* html */ `
         <span class="item" onclick="board.setmode(0)">✏️</span>
         <span class="item" onclick="board.setmode(1)">消</span>
         <span class="item" onclick="board.setmode(2)">塗</span>
-        <span class="item" onclick="board.setmode(3)">線</span>
-        <span class="item" onclick="board.setmode(4)">円</span>
-        <span class="item" onclick="board.setmode(5)">楕</span>
       </div>
       <div id="palette"></div>
     </div>
