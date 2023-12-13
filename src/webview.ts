@@ -26,13 +26,9 @@ const Tool = {
   "pen": 0,
   "eraser": 1,
   "fillBucket": 2,
-  "line": 3,
-  "circle": 4,
-  "ellipse": 5,
 }
 
-let tools = [true, false, false, false, false, false]
-let lc: Point[] = []
+let tools = [true, false, false]
 class Board {
   /** The canvas */
   canvas: HTMLCanvasElement
@@ -53,7 +49,6 @@ class Board {
   /** pixel data array */
   data: Color[][]
   prevPoint: Point | undefined
-  active = false
   color: Color = [0, 0, 0, 0]
   constructor(dataWidth: number, dataHeight: number) {
     document.querySelector<HTMLElement>(".mini-canvas-wrapper")!.classList
@@ -85,11 +80,9 @@ class Board {
 
     this.canvas.addEventListener("mousedown", (_e) => {
       this.prevPoint = undefined
-      this.active = true
     })
 
     this.canvas.addEventListener("mouseup", (e) => {
-      this.active = false
       if (this.prevPoint !== undefined) {
         return // Don't re-paint the last point in a streak
       }
@@ -103,7 +96,7 @@ class Board {
         filler(x, y, this.data[x][y])
       } else if (tools[Tool.eraser]) {
         const temp = this.color
-        this.setcolor([255, 255, 255, 255])
+        this.setcolor([0, 0, 0, 0])
         this.draw(x, y)
         this.setcolor(temp)
       } else {
@@ -136,10 +129,6 @@ class Board {
     }
   }
 
-  clear() {
-    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
-  }
-
   erase(x: number, y: number) {
     const temp = this.color
     this.setcolor([0, 0, 0, 0])
@@ -153,7 +142,7 @@ class Board {
   }
 
   setmode(i: number) {
-    tools = [false, false, false, false, false, false]
+    tools = [false, false, false]
     tools[i] = true
     document.querySelectorAll<HTMLElement>("#toolbar .item").forEach((x, i) => {
       if (tools[i]) x.style.backgroundColor = "grey"
@@ -283,7 +272,6 @@ document.querySelector<HTMLElement>("#close")!.onclick = function () {
 }
 
 function newProject() {
-  localStorage.removeItem("pc-canvas-data")
   dim = new Popup("#popup")
   colors = [
     [0, 0, 0, 255],
@@ -324,24 +312,6 @@ function filler(x: number, y: number, cc: Color) {
   }
 }
 
-/** This function Multiplies two Matrices (a, b) */
-function matrixMult(a: number[][], b: number[][]) {
-  const aNumRows = a.length
-  const aNumCols = a[0].length
-  const bNumCols = b[0].length
-  const m = new Array(aNumRows) // initialize array of rows
-  for (let r = 0; r < aNumRows; ++r) {
-    m[r] = new Array(bNumCols) // initialize the current row
-    for (let c = 0; c < bNumCols; ++c) {
-      m[r][c] = 0 // initialize the current cell
-      for (let i = 0; i < aNumCols; ++i) {
-        m[r][c] += a[r][i] * b[i][c]
-      }
-    }
-  }
-  return m
-}
-
 class Point {
   constructor(public x: number, public y: number) {
   }
@@ -349,7 +319,7 @@ class Point {
     if (point === undefined) {
       return false
     }
-    return ((this.x == point.x) && (this.y == point.y))
+    return (this.x == point.x) && (this.y == point.y)
   }
 }
 
