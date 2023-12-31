@@ -48,7 +48,6 @@ class Board {
   canvasHeight: number
   /** pixel data array */
   data: Color[][]
-  prevPoint: Point | undefined
   color: Color = [0, 0, 0, 0]
   constructor(dataWidth: number, dataHeight: number) {
     document.querySelector<HTMLElement>(".mini-canvas-wrapper")!.classList
@@ -76,17 +75,7 @@ class Board {
       Array(this.dataHeight).fill([255, 255, 255, 0])
     )
 
-    this.prevPoint = undefined
-
-    this.canvas.addEventListener("mousedown", (_e) => {
-      this.prevPoint = undefined
-    })
-
     this.canvas.addEventListener("mouseup", (e) => {
-      if (this.prevPoint !== undefined) {
-        return // Don't re-paint the last point in a streak
-      }
-
       const rect = this.canvas.getBoundingClientRect()
       let x = e.clientX - rect.left
       let y = e.clientY - rect.top
@@ -101,7 +90,6 @@ class Board {
         this.setcolor(temp)
       } else {
         // Pen tool
-        this.prevPoint = new Point(x, y)
         this.draw(x, y, true)
       }
     })
@@ -312,17 +300,6 @@ function filler(x: number, y: number, cc: Color) {
   }
 }
 
-class Point {
-  constructor(public x: number, public y: number) {
-  }
-  equals(point: Point | undefined) {
-    if (point === undefined) {
-      return false
-    }
-    return (this.x == point.x) && (this.y == point.y)
-  }
-}
-
 // deno-lint-ignore no-unused-vars
 function act(clr: HTMLElement) {
   document.querySelectorAll<HTMLElement>("#palette .item").forEach((x) =>
@@ -352,7 +329,7 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   switch (e.data.type) {
     case "init": {
       // TODO(kt3k): Get colors from somewhere in disk
-      // ex. ./pixeledit.json
+      // ex. ./palette.json
       colors = [
         [0, 0, 0, 255],
         [127, 127, 127, 255],
