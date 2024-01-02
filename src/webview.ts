@@ -17,6 +17,7 @@ function postMessageToExtention(message: WebviewMessage) {
 let board: Board
 let colors: Color[]
 let dim: Popup
+let tools = [true, false, false]
 
 function toCssColor(c: Color): string {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -28,7 +29,6 @@ const Tool = {
   "fillBucket": 2,
 }
 
-let tools = [true, false, false]
 class Board {
   /** The canvas */
   canvas: HTMLCanvasElement

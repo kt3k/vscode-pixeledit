@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "displayName": "Pixel Art Editor extension",
   "description": "Pixel Art Editor extension",
-  "main": "./out/ext.js",
+  "main": "./out/extension.js",
   "publisher": "kt3k",
   "engines": {
     "vscode": "^1.48.0"
