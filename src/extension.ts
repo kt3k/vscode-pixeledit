@@ -84,8 +84,17 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
   #requestId = 1
   #callbacks = new Map<number, (response: string) => void>()
   #webviews = new Set<{ key: string; webview: Webview }>()
+  #html: Promise<string>
 
-  constructor(public uri: Uri) {}
+  constructor(public uri: Uri) {
+    this.#html = this.#createHtml()
+  }
+
+  async #createHtml() {
+    return new TextDecoder().decode(
+      await readFile(Uri.joinPath(this.uri, "out/webview.html")),
+    )
+  }
 
   async openCustomDocument(
     uri: Uri,
@@ -107,7 +116,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     }
   }
 
-  resolveCustomEditor(
+  async resolveCustomEditor(
     doc: PixelDoc,
     panel: WebviewPanel,
     _token: CancellationToken,
@@ -121,9 +130,12 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
 
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
-    webview.html = html(
-      webview.asWebviewUri(Uri.joinPath(this.uri, "out/webview.js")),
-    )
+    const scriptUri = Uri.joinPath(this.uri, "out/webview.js")
+    const styleUri = Uri.joinPath(this.uri, "out/style.css")
+    const html = await this.#html
+    webview.html = html
+      .replace("${scriptUri}", webview.asWebviewUri(scriptUri).toString())
+      .replace("${styleUri}", webview.asWebviewUri(styleUri).toString())
 
     webview.onDidReceiveMessage((e: WebviewMessage) => {
       console.log("webview -> extension " + e.type, e)
@@ -222,225 +234,3 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     }
   }
 }
-
-const html = (scriptUri: Uri) => /* html */ `
-<html>
-  <head>
-    <style>${style}</style>
-  </head>
-  <body>
-    <div id="popup">
-      <h3>Select the Dimensions Of the grid</h3>
-      <input type="text" id="width" value="16" />X<input
-        type="text"
-        id="height"
-        value="16"
-      />
-      <button id="close">OK</button>
-    </div>
-    <div class="board">
-      <div class="mini-canvas-wrapper hidden">
-        <span>
-          <canvas class="mini-canvas" id="canvas-mini"></canvas>
-        </span>
-      </div>
-      <canvas id="canvas"></canvas>
-      <div id="toolbar">
-        <span class="item" onclick="board.setmode(0)">✏️</span>
-        <span class="item" onclick="board.setmode(1)">消</span>
-        <span class="item" onclick="board.setmode(2)">塗</span>
-      </div>
-      <div id="palette"></div>
-    </div>
-  </body>
-  <script src="${scriptUri}"></script>
-</html>
-`
-
-const style = /* css */ `
-body {
-  margin: 0px;
-}
-
-#popup {
-  background-color: #332f35;
-  color: white;
-  font-size: 20px;
-  padding: 30px;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.1, 0.1);
-  text-align: center;
-  max-width: 420px;
-  width: 70%;
-  transition: 0.2s all;
-  z-index: 2;
-  border-radius: 5px;
-}
-#popup {
-  display: none;
-}
-#popup h3 {
-  line-height: 30px;
-}
-
-#width,
-#height {
-  background-color: #262327;
-  color: white;
-  margin: 10px;
-  padding: 5px;
-  font-size: 14px;
-  font-weight: bolder;
-  border: none;
-  border-radius: 3px;
-  max-width: 60px;
-}
-
-#close {
-  background-color: #262327;
-  color: white;
-  margin: 15px auto 5px auto;
-  padding: 5px 10px 5px 10px;
-  font-size: 18px;
-  font-weight: bolder;
-  display: block;
-  border: none;
-  border-radius: 3px;
-  max-width: 60px;
-  transition: 0.2s all;
-}
-
-#close:hover {
-  box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.5);
-}
-
-#canvas {
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 75%;
-  max-width: 550px;
-  display: none;
-  cursor: crosshair;
-  touch-action: none;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.board .mini-canvas-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 16px;
-}
-
-.board .mini-canvas-wrapper span {
-  padding: 16px;
-  background-color: #554455;
-  border-radius: 50%;
-}
-
-#toolbar {
-  position: fixed;
-  top: 50%;
-  left: 0%;
-  transform: translateY(-50%);
-  padding: 0px;
-  color: white;
-  max-width: 150px;
-}
-
-#toolbar .item {
-  display: inline-block;
-  float: left;
-  padding: 15px;
-  border: 1px solid #fff;
-  cursor: pointer;
-  height: 32px;
-  width: 32px;
-  font-family: Arial, FontAwesome;
-  font-size: 24px;
-}
-
-#palette {
-  position: fixed;
-  top: 50%;
-  right: 0%;
-  transform: translateY(-50%);
-  padding: 0px;
-  color: white;
-  max-width: 100px;
-}
-
-#palette .item {
-  display: inline-block;
-  float: left;
-  padding: 25px;
-  cursor: pointer;
-}
-
-path {
-  fill: white;
-}
-
-.display-none {
-  display: none;
-}
-
-.item:hover {
-  background-color: grey;
-}
-
-.menubtn {
-  position: fixed;
-  left: 20px;
-  top: 20px;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  background-color: #332f35;
-  color: white;
-  padding: 5px 15px 5px 15px;
-  border-radius: 5px;
-  font-size: 25px;
-  font-weight: bolder;
-  cursor: pointer;
-  z-index: 3;
-}
-
-.menu {
-  position: fixed;
-  top: 70px;
-  left: 20px;
-  border-radius: 5px;
-  padding: 0px;
-  color: white;
-  z-index: 3;
-  display: none;
-}
-
-.menu li {
-  padding: 5px 20px 5px 20px;
-  list-style: none;
-  background-color: #332f35;
-  cursor: pointer;
-}
-
-.menu li i {
-  padding-right: 10px;
-}
-
-.menu li a {
-  text-decoration: none;
-  color: white;
-}
-
-.hidden {
-  display: none !important;
-}
-`

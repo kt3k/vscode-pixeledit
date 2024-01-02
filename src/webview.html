@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="${styleUri}" />
+  </head>
+  <body>
+    <div id="popup">
+      <h3>Select the Dimensions Of the grid</h3>
+      <input type="text" id="width" value="16" />X<input
+        type="text"
+        id="height"
+        value="16"
+      />
+      <button id="close">OK</button>
+    </div>
+    <div class="board">
+      <div class="mini-canvas-wrapper hidden">
+        <span>
+          <canvas class="mini-canvas" id="canvas-mini"></canvas>
+        </span>
+      </div>
+      <canvas id="canvas"></canvas>
+      <div id="toolbar">
+        <span class="item" onclick="board.setmode(0)">✏️</span>
+        <span class="item" onclick="board.setmode(1)">消</span>
+        <span class="item" onclick="board.setmode(2)">塗</span>
+      </div>
+      <div id="palette"></div>
+    </div>
+  </body>
+  <script src="${scriptUri}"></script>
+</html>
