@@ -63,9 +63,10 @@ class PixelDoc implements CustomDocument {
   edits: Edit[] = []
   /** The saved edits */
   #saved: Edit[] = []
-  constructor(public readonly uri: Uri, public bytes: Uint8Array) {}
-  get key() {
-    return this.uri.toString()
+  /** The key */
+  readonly key: string
+  constructor(public readonly uri: Uri, public bytes: Uint8Array) {
+    this.key = uri.toString()
   }
   get dataUri() {
     return "data:image/png;base64," +
