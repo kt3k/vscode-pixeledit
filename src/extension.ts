@@ -72,6 +72,12 @@ class PixelDoc implements CustomDocument {
       Buffer.from(this.bytes).toString("base64")
   }
   dispose() {}
+  onEdit(edit: Edit) {
+    this.edits.push(edit)
+  }
+  onUndo() {
+    this.edits.pop()
+  }
   onSave() {
     this.#saved = [...this.edits]
   }
@@ -141,25 +147,25 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
       console.log("webview -> extension " + e.type, e)
       switch (e.type) {
         case "edit": {
-          doc.edits.push(e.edit)
+          doc.onEdit(e.edit)
 
           this.#changeEvent.fire({
             document: doc,
             label: "Change",
             undo: () => {
-              doc.edits.pop()
+              doc.onUndo()
               this.#updateWebview(doc)
             },
             redo: () => {
-              doc.edits.push(e.edit)
+              doc.onEdit(e.edit)
               this.#updateWebview(doc)
             },
           })
-          return
+          break
         }
         case "response": {
           this.#callbacks.get(e.requestId)?.(e.body)
-          return
+          break
         }
         case "ready": {
           if (doc.uri.scheme === "untitled") {
@@ -170,6 +176,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
               dataUri: doc.dataUri,
             })
           }
+          break
         }
       }
     })
