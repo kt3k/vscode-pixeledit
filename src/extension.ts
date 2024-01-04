@@ -18,6 +18,8 @@ import {
 import { Buffer } from "node:buffer"
 import type { Edit, ExtensionMessageData, WebviewMessage } from "./types"
 
+const { fs } = workspace
+
 export function activate({ subscriptions, extensionUri }: ExtensionContext) {
   let newId = 1
   commands.registerCommand("kt3k.pixeledit.new", () => {
@@ -52,9 +54,7 @@ function postMessage(webview: Webview, message: ExtensionMessageData) {
 
 // deno-lint-ignore require-await
 async function readFile(uri: Uri): Promise<Uint8Array> {
-  return uri.scheme === "untitled"
-    ? new Uint8Array()
-    : workspace.fs.readFile(uri)
+  return uri.scheme === "untitled" ? new Uint8Array() : fs.readFile(uri)
 }
 
 /** The document */
@@ -135,39 +135,33 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
       .replace("${styleUri}", webview.asWebviewUri(styleUri).toString())
 
     webview.onDidReceiveMessage((e: WebviewMessage) => {
-      console.log("webview -> extension " + e.type, e)
-      switch (e.type) {
-        case "edit": {
-          doc.onEdit(e.edit)
+      const { type } = e
+      console.log("webview -> extension " + type, e)
+      if (type === "edit") {
+        doc.onEdit(e.edit)
 
-          this.#changeEvent.fire({
-            document: doc,
-            label: "Change",
-            undo: () => {
-              doc.onUndo()
-              postMessage(webview, doc.updateEvent())
-            },
-            redo: () => {
-              doc.onEdit(e.edit)
-              postMessage(webview, doc.updateEvent())
-            },
+        this.#changeEvent.fire({
+          document: doc,
+          label: "Change",
+          undo: () => {
+            doc.onUndo()
+            postMessage(webview, doc.updateEvent())
+          },
+          redo: () => {
+            doc.onEdit(e.edit)
+            postMessage(webview, doc.updateEvent())
+          },
+        })
+      } else if (type === "response") {
+        this.#callbacks.get(e.requestId)?.(e.body)
+      } else if (type === "ready") {
+        if (doc.uri.scheme === "untitled") {
+          postMessage(webview, { type: "new" })
+        } else {
+          postMessage(webview, {
+            type: "init",
+            dataUri: doc.dataUri,
           })
-          break
-        }
-        case "response": {
-          this.#callbacks.get(e.requestId)?.(e.body)
-          break
-        }
-        case "ready": {
-          if (doc.uri.scheme === "untitled") {
-            postMessage(webview, { type: "new" })
-          } else {
-            postMessage(webview, {
-              type: "init",
-              dataUri: doc.dataUri,
-            })
-          }
-          break
         }
       }
     })
@@ -202,7 +196,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     if (cancel.isCancellationRequested) {
       return
     }
-    await workspace.fs.writeFile(dest, Buffer.from(dataUri.slice(22), "base64"))
+    await fs.writeFile(dest, Buffer.from(dataUri.slice(22), "base64"))
   }
 
   async revertCustomDocument(doc: PixelDoc) {
@@ -213,21 +207,14 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
 
   async backupCustomDocument(
     doc: PixelDoc,
-    ctx: CustomDocumentBackupContext,
+    { destination }: CustomDocumentBackupContext,
     cancel: CancellationToken,
   ) {
-    const dest = ctx.destination
-    await this.saveCustomDocumentAs(doc, dest, cancel)
+    await this.saveCustomDocumentAs(doc, destination, cancel)
 
     return {
-      id: dest.toString(),
-      delete: async () => {
-        try {
-          await workspace.fs.delete(dest)
-        } catch {
-          // noop
-        }
-      },
+      id: destination.toString(),
+      delete: () => fs.delete(destination).then(() => {}, () => {}),
     }
   }
 }
