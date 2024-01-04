@@ -135,36 +135,41 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
       .replace("${styleUri}", webview.asWebviewUri(styleUri).toString())
 
     webview.onDidReceiveMessage((e: WebviewMessage) => {
-      const { type } = e
-      console.log("webview -> extension " + type, e)
-      if (type === "edit") {
-        doc.onEdit(e.edit)
-
-        this.#changeEvent.fire({
-          document: doc,
-          label: "Change",
-          undo: () => {
-            doc.onUndo()
-            postMessage(webview, doc.updateEvent())
-          },
-          redo: () => {
-            doc.onEdit(e.edit)
-            postMessage(webview, doc.updateEvent())
-          },
-        })
-      } else if (type === "response") {
-        this.#callbacks.get(e.requestId)?.(e.body)
-      } else if (type === "ready") {
-        if (doc.uri.scheme === "untitled") {
-          postMessage(webview, { type: "new" })
-        } else {
-          postMessage(webview, {
-            type: "init",
-            dataUri: doc.dataUri,
-          })
-        }
-      }
+      this.#handleWebviewMessage(doc, e)
     })
+  }
+
+  #handleWebviewMessage(doc: PixelDoc, e: WebviewMessage) {
+    console.log("webview -> extension " + e.type, e)
+
+    const { type } = e
+    if (type === "edit") {
+      doc.onEdit(e.edit)
+
+      this.#changeEvent.fire({
+        document: doc,
+        label: "Change",
+        undo: () => {
+          doc.onUndo()
+          postMessage(this.#webviews[doc.key], doc.updateEvent())
+        },
+        redo: () => {
+          doc.onEdit(e.edit)
+          postMessage(this.#webviews[doc.key], doc.updateEvent())
+        },
+      })
+    } else if (type === "response") {
+      this.#callbacks.get(e.requestId)?.(e.body)
+    } else if (type === "ready") {
+      if (doc.uri.scheme === "untitled") {
+        postMessage(this.#webviews[doc.key], { type: "new" })
+      } else {
+        postMessage(this.#webviews[doc.key], {
+          type: "init",
+          dataUri: doc.dataUri,
+        })
+      }
+    }
   }
 
   #changeEvent = new EventEmitter<CustomDocumentEditEvent<PixelDoc>>()
