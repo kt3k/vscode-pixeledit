@@ -6,9 +6,10 @@
   "main": "./out/extension.js",
   "publisher": "kt3k",
   "engines": {
-    "vscode": "^1.48.0"
+    "vscode": "^1.85.2"
   },
   "scripts": {
+    "test": "vscode-test",
     "build": "tsc -p ./ && cp src/*.html src/*.css out/"
   },
   "categories": [
@@ -42,6 +43,8 @@
   "devDependencies": {
     "@types/node": "^20.11.5",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
     "typescript": "^5.3.3"
   },
   "dependencies": {
