@@ -177,10 +177,13 @@ class Board {
     })
   }
 
-  static async import(uri: string): Promise<Board> {
+  static async import(uri: string, edits: Edit[]): Promise<Board> {
     const img = await loadImage(uri)
     const board = new Board(img.width, img.height)
     await board.importImage(uri)
+    for (const edit of edits) {
+      board.applyEdit(edit)
+    }
     return board
   }
 
@@ -310,7 +313,7 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
         [112, 146, 190, 255],
         [200, 191, 231, 255],
       ]
-      board = await Board.import(e.data.dataUri)
+      board = await Board.import(e.data.dataUri, e.data.edits)
       initPalette()
       break
     }
@@ -332,5 +335,4 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
     }
   }
 })
-
 postMessageToExtention({ type: "ready" })

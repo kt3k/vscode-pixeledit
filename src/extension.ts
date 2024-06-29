@@ -167,6 +167,7 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
         postMessage(this.#webviews[doc.key], {
           type: "init",
           dataUri: doc.dataUri,
+          edits: doc.edits,
         })
       }
     }

@@ -23,6 +23,7 @@ export type ExtensionMessageEvent = MessageEvent<ExtensionMessageData>
 export type ExtensionMessageData = {
   readonly type: "init"
   readonly dataUri: string
+  readonly edits: Edit[]
 } | {
   readonly type: "new"
 } | {
