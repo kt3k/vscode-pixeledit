@@ -1,0 +1,28 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "npm:typescript@5.5.2": "npm:typescript@5.5.2"
+    },
+    "npm": {
+      "typescript@5.5.2": {
+        "integrity": "sha512-NcRtPEOsPFFWjobJEtfihkLCZCXZt/os3zf8nTxjVH3RvTSxjrCamJpbExGvYOF+tFHc3pA65qpdwPbzjohhew==",
+        "dependencies": {}
+      }
+    }
+  },
+  "remote": {},
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@types/node@^20.14.9",
+        "npm:@types/vscode-webview@^1.57.4",
+        "npm:@types/vscode@^1.85.0",
+        "npm:@vscode/test-cli@^0.0.4",
+        "npm:@vscode/test-electron@^2.3.8",
+        "npm:@vscode/vsce@^2.29.0",
+        "npm:typescript@^5.3.3"
+      ]
+    }
+  }
+}

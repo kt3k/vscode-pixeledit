@@ -16,10 +16,9 @@ function postMessageToExtention(message: WebviewMessage) {
 
 let board: Board
 let colors: Color[]
-let dim: Popup
 let tools = [true, false, false]
 
-function toCssColor(c: Color): string {
+function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
 }
 
@@ -209,20 +208,6 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
-class Popup {
-  s: string
-  constructor(s: string) {
-    this.s = s
-    document.querySelector<HTMLElement>(this.s)!.style.display = "block"
-    document.querySelector<HTMLElement>(this.s)!.style.transform =
-      "translate(-50%,-50%) scale(1,1)"
-  }
-  close() {
-    document.querySelector<HTMLElement>(this.s)!.style.transform =
-      "translate(-50%,-50%) scale(0,0)"
-  }
-}
-
 function initPalette() {
   const palette = document.querySelector("#palette")!
   palette.innerHTML = colors.map((x) =>
@@ -233,34 +218,7 @@ function initPalette() {
   ;(palette.firstChild! as any).click()
 }
 
-document.querySelector<HTMLElement>("#close")!.onclick = function () {
-  const width = +document.querySelector<HTMLInputElement>("#width")!.value
-  const height = +document.querySelector<HTMLInputElement>("#height")!.value
-  if (board == undefined) {
-    board = new Board(width, height)
-  }
-  board.canvas.width = 10 * width //display each pixel in 10 by 10pxs
-  board.canvas.height = 10 * height
-  board.dataWidth = width //Dimentions of x pixels
-  board.dataHeight = height //Dimentions of Y pixels
-  board.canvas.style.display = "block"
-  board.canvas.style.height =
-    Math.floor((height / width) * board.canvas.clientWidth) + "px"
-  board.canvasWidth = +board.canvas.width
-  board.canvasHeight = +board.canvas.height
-  board.ctx = board.canvas.getContext("2d")!
-  board.ctx.fillStyle = "white"
-  board.ctx.fillRect(0, 0, board.canvasWidth, board.canvasHeight)
-  board.data = [...Array(board.dataWidth)].map((_e) =>
-    Array(board.dataHeight).fill([255, 255, 255, 255])
-  )
-
-  board.setcolor([0, 0, 0, 255])
-  dim.close()
-}
-
 function newProject() {
-  dim = new Popup("#popup")
   colors = [
     [0, 0, 0, 255],
     [127, 127, 127, 255],
