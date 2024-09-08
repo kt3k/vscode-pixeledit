@@ -1,5 +1,7 @@
 // Copyright 2022-2023 Yoshiya Hinosawa. All rights reserved. MIT license.
 
+/// <reference lib="dom" />
+
 export type Color = readonly [number, number, number, number]
 
 export type Edit = {

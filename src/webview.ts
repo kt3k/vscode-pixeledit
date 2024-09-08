@@ -3,10 +3,12 @@
 
 /// <reference lib="dom" />
 
-type Color = import("./types").Color
-type Edit = import("./types").Edit
-type WebviewMessage = import("./types").WebviewMessage
-type ExtensionMessageEvent = import("./types").ExtensionMessageEvent
+import type {
+  Color,
+  Edit,
+  ExtensionMessageEvent,
+  WebviewMessage,
+} from "./types"
 
 const vscode = acquireVsCodeApi()
 

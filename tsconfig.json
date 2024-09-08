@@ -8,5 +8,8 @@
     "strict": true,
     "rootDir": "src/"
   },
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/webview.ts"
+  ]
 }
