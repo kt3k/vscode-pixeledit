@@ -1,0 +1,15 @@
+{
+  "fmt": {
+    "semiColons": false,
+    "exclude": [
+      "out",
+      "node_modules",
+      "package-lock.json",
+      ".vscode-test"
+    ]
+  },
+  "unstable": [
+    "sloppy-imports"
+  ],
+  "nodeModulesDir": "auto"
+}
