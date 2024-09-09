@@ -8,6 +8,7 @@
     "npm:@types/vscode@^1.85.0": "1.93.0",
     "npm:@vscode/test-cli@^0.0.4": "0.0.4",
     "npm:@vscode/test-electron@^2.3.8": "2.4.1",
+    "npm:@vscode/vsce@2.32.0": "2.32.0",
     "npm:@vscode/vsce@^2.29.0": "2.32.0",
     "npm:typescript@5.5.4": "5.5.4",
     "npm:typescript@^5.3.3": "5.5.4"
