@@ -123,10 +123,20 @@ body {
 }
 
 #palette .item {
-  display: inline-block;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
   float: left;
-  padding: 25px;
+  width: 50px;
+  height: 50px;
   cursor: pointer;
+  font-size: 9px;
+}
+
+#palette .item span {
+  background-color: #222;
+  width: 100%;
+  text-align: center;
 }
 
 path {

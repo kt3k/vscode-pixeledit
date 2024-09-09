@@ -253,7 +253,7 @@ function initPalette() {
     `<span class="item" title="${toHex(color)}" style="background-color: ${
       toCssColor(color)
     };" onclick="board.setcolor([${color}]);act(this);">
-      <span style="position: absolute;">${toHex(color)}</span>
+      <span>${toHex(color)}</span>
     </span>`
   ).join("\n")
   ;(palette.firstChild! as any).click()
