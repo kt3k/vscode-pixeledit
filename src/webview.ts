@@ -3,7 +3,7 @@
 
 /// <reference lib="dom" />
 
-import { register } from "@kt3k/cell"
+import { register, type Context } from "@kt3k/cell"
 
 import type {
   Color,
@@ -221,7 +221,8 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
-function initPalette() {
+/** Palette UI Component */
+function Palette({ on, queryAll } : Context) {
   // TODO(kt3k): Get colors from somewhere in disk
   // ex. ./palette.json
   const colors: Color[] = [
@@ -248,15 +249,25 @@ function initPalette() {
     [112, 146, 190, 255],
     [200, 191, 231, 255],
   ]
-  const palette = document.querySelector("#palette")!
-  palette.innerHTML = colors.map((color) =>
-    `<span class="item" title="${toHex(color)}" style="background-color: ${
-      toCssColor(color)
-    };" onclick="board.setcolor([${color}]);act(this);">
+
+  on("click", ".item", (e) => {
+    const item = e.target as HTMLElement
+    const color = item.dataset.color!.split(",").map(Number) as any as Color
+    board.setcolor(color)
+    queryAll<HTMLElement>("#palette .item").forEach((x) =>
+      x.style.boxShadow = ""
+    )
+    item.style.boxShadow = "0px 0px 1px 1px white inset"
+  });
+
+  return colors.map((color) =>
+    `<span
+       class="item"
+       data-color="${color}"
+       style="background-color: ${toCssColor(color)};">
       <span>${toHex(color)}</span>
     </span>`
   ).join("\n")
-  ;(palette.firstChild! as any).click()
 }
 
 function filler(x: number, y: number, cc: Color) {
@@ -274,26 +285,15 @@ function filler(x: number, y: number, cc: Color) {
   }
 }
 
-// deno-lint-ignore no-unused-vars
-function act(clr: HTMLElement) {
-  document.querySelectorAll<HTMLElement>("#palette .item").forEach((x) =>
-    x.style.boxShadow = ""
-  )
-  clr.style.boxShadow = "0px 0px 1px 1px white inset"
-}
-
-globalThis.act = act
-
 globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   console.log("extension -> webview " + e.data.type, e)
   switch (e.data.type) {
     case "init": {
       board = await Board.import(e.data.dataUri, e.data.edits)
-      initPalette()
       break
     }
     case "new": {
-      initPalette()
+      // to be implemented
       break
     }
     case "getBytes": {
@@ -310,3 +310,4 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   }
 })
 postMessageToExtention({ type: "ready" })
+register(Palette, "js-palette");
