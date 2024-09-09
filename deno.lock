@@ -1,6 +1,8 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@kt3k/cell@~0.3.6": "0.3.6",
+    "jsr:@kt3k/signal@~0.1.6": "0.1.6",
     "npm:@types/node@^20.14.9": "20.16.5",
     "npm:@types/vscode-webview@^1.57.4": "1.57.5",
     "npm:@types/vscode@^1.85.0": "1.93.0",
@@ -9,6 +11,17 @@
     "npm:@vscode/vsce@^2.29.0": "2.32.0",
     "npm:typescript@5.5.4": "5.5.4",
     "npm:typescript@^5.3.3": "5.5.4"
+  },
+  "jsr": {
+    "@kt3k/cell@0.3.6": {
+      "integrity": "56bbb4b5395dee15e723f3792e821810a1ef51d15b7e5fda976d21f2697c7eea",
+      "dependencies": [
+        "jsr:@kt3k/signal"
+      ]
+    },
+    "@kt3k/signal@0.1.6": {
+      "integrity": "e9351a127d2977f6e9469c884fd5289592a4766a09974ae5e84d6ce501abc10f"
+    }
   },
   "npm": {
     "@azure/abort-controller@1.1.0": {
@@ -1648,6 +1661,9 @@
     }
   },
   "workspace": {
+    "dependencies": [
+      "jsr:@kt3k/cell@~0.3.6"
+    ],
     "packageJson": {
       "dependencies": [
         "npm:@types/node@^20.14.9",

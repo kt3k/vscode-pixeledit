@@ -3,6 +3,8 @@
 
 /// <reference lib="dom" />
 
+import { register } from "@kt3k/cell"
+
 import type {
   Color,
   Edit,
@@ -17,11 +19,17 @@ function postMessageToExtention(message: WebviewMessage) {
 }
 
 let board: Board
-let colors: Color[]
 let tools = [true, false, false]
 
 function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
+}
+
+function toHex(c: Color) {
+  const r = c[0].toString(16).padStart(2, "0")
+  const g = c[1].toString(16).padStart(2, "0")
+  const b = c[2].toString(16).padStart(2, "0")
+  return `#${r}${g}${b}`
 }
 
 const Tool = {
@@ -214,20 +222,14 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
 }
 
 function initPalette() {
-  const palette = document.querySelector("#palette")!
-  palette.innerHTML = colors.map((x) =>
-    `<span class="item" style="background-color: ${
-      toCssColor(x)
-    }" onclick="board.setcolor([${x}]);act(this);"></span>`
-  ).join("\n")
-  ;(palette.firstChild! as any).click()
-}
-
-function newProject() {
-  colors = [
+  // TODO(kt3k): Get colors from somewhere in disk
+  // ex. ./palette.json
+  const colors: Color[] = [
     [0, 0, 0, 255],
-    [127, 127, 127, 255],
-    [136, 0, 21, 255],
+    [0x7c, 0x7c, 0x7c, 255],
+    [0xbc, 0xbc, 0xbc, 255],
+    [0xf8, 0xf8, 0xf8, 255],
+    [0xfc, 0xfc, 0xfc, 255],
     [237, 28, 36, 255],
     [255, 127, 39, 255],
     [255, 242, 0, 255],
@@ -246,6 +248,15 @@ function newProject() {
     [112, 146, 190, 255],
     [200, 191, 231, 255],
   ]
+  const palette = document.querySelector("#palette")!
+  palette.innerHTML = colors.map((color) =>
+    `<span class="item" title="${toHex(color)}" style="background-color: ${
+      toCssColor(color)
+    };" onclick="board.setcolor([${color}]);act(this);">
+      <span style="position: absolute;">${toHex(color)}</span>
+    </span>`
+  ).join("\n")
+  ;(palette.firstChild! as any).click()
 }
 
 function filler(x: number, y: number, cc: Color) {
@@ -271,56 +282,17 @@ function act(clr: HTMLElement) {
   clr.style.boxShadow = "0px 0px 1px 1px white inset"
 }
 
-type MessageData = {
-  type: "init"
-  bytes: string
-} | {
-  type: "new"
-} | {
-  type: "getBytes"
-  requestId: number
-} | {
-  type: "update"
-  doc: {
-    bytes: string
-    edits: Edit[]
-  }
-}
+globalThis.act = act
 
 globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   console.log("extension -> webview " + e.data.type, e)
   switch (e.data.type) {
     case "init": {
-      // TODO(kt3k): Get colors from somewhere in disk
-      // ex. ./palette.json
-      colors = [
-        [0, 0, 0, 255],
-        [127, 127, 127, 255],
-        [136, 0, 21, 255],
-        [237, 28, 36, 255],
-        [255, 127, 39, 255],
-        [255, 242, 0, 255],
-        [34, 177, 36, 255],
-        [0, 162, 232, 255],
-        [63, 72, 204, 255],
-        [163, 73, 164, 255],
-        [255, 255, 255, 255],
-        [195, 195, 195, 255],
-        [185, 122, 87, 255],
-        [255, 174, 201, 255],
-        [255, 201, 14, 255],
-        [239, 228, 176, 255],
-        [181, 230, 29, 255],
-        [153, 217, 234, 255],
-        [112, 146, 190, 255],
-        [200, 191, 231, 255],
-      ]
       board = await Board.import(e.data.dataUri, e.data.edits)
       initPalette()
       break
     }
     case "new": {
-      newProject()
       initPalette()
       break
     }

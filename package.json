@@ -11,6 +11,7 @@
   "scripts": {
     "test": "vscode-test",
     "build": "tsc -p ./ && deno -A jsr:@kt3k/pack@0.1.10 src/webview.ts -o out/webview.js && cp src/*.html src/*.css out/",
+    "fmt": "deno fmt --unstable-css",
     "package": "vsce package"
   },
   "categories": [
