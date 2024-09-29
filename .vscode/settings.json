@@ -1,5 +1,7 @@
 {
   "deno.enable": false,
+  "deno.enablePaths": ["src/webview.ts"],
+  "deno.config": "./deno.json",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno"
 }

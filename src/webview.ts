@@ -2,15 +2,16 @@
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
 /// <reference lib="dom" />
+/// <reference path="../node_modules/@types/vscode-webview/index.d.ts" />
 
-import { register, type Context } from "@kt3k/cell"
+import { type Context, register } from "@kt3k/cell"
 
 import type {
   Color,
   Edit,
   ExtensionMessageEvent,
   WebviewMessage,
-} from "./types"
+} from "./types.ts"
 
 const vscode = acquireVsCodeApi()
 
@@ -222,7 +223,7 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
 }
 
 /** Palette UI Component */
-function Palette({ on, queryAll } : Context) {
+function Palette({ on, queryAll }: Context) {
   // TODO(kt3k): Get colors from somewhere in disk
   // ex. ./palette.json
   const colors: Color[] = [
@@ -258,7 +259,7 @@ function Palette({ on, queryAll } : Context) {
       x.style.boxShadow = ""
     )
     item.style.boxShadow = "0px 0px 1px 1px white inset"
-  });
+  })
 
   return colors.map((color) =>
     `<span
@@ -310,4 +311,4 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   }
 })
 postMessageToExtention({ type: "ready" })
-register(Palette, "js-palette");
+register(Palette, "js-palette")
