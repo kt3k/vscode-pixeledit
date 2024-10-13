@@ -137,13 +137,6 @@ class Board {
   }
 
   setmode(i: number) {
-    console.log("setmode", i)
-    tools = [false, false, false]
-    tools[i] = true
-    document.querySelectorAll<HTMLElement>("#toolbar .item").forEach((x, i) => {
-      if (tools[i]) x.style.backgroundColor = "#777"
-      else x.style.backgroundColor = ""
-    })
   }
 
   async update(dataUri: string, edits: Edit[]) {
@@ -220,11 +213,15 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
-function Tools({ on }: Context) {
-  on("click", ".item", (e) => {
-    const item = e.target as HTMLElement
-    const index = Number(item.dataset.index)
-    board.setmode(index)
+function Tools({ on, queryAll }: Context) {
+  on("click", ".item", ({ target }) => {
+    const item = target as HTMLElement
+    tools = [false, false, false]
+    tools[Number(item.dataset.index)] = true
+    queryAll<HTMLElement>(".item").forEach((x) => {
+      x.style.backgroundColor = ""
+    })
+    item.style.backgroundColor = "#777"
   })
 }
 
