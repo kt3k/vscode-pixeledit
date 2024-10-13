@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Yoshiya Hinosawa. All rights reserved. MIT license.
+// Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
 // Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
 /// <reference lib="dom" />
@@ -310,5 +310,6 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
     }
   }
 })
+
 postMessageToExtention({ type: "ready" })
 register(Palette, "js-palette")

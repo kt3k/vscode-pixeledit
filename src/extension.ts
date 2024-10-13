@@ -1,4 +1,4 @@
-// Copyright 2022-2023 Yoshiya Hinosawa. All rights reserved. MIT license.
+// Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
 
 import {
   type CancellationToken,
