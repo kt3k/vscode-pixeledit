@@ -20,7 +20,7 @@ function postMessageToExtention(message: WebviewMessage) {
 }
 
 let board: Board
-let tools = [true, false, false]
+let tools = [true, false, false] as [boolean, boolean, boolean]
 
 function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -37,7 +37,7 @@ const Tool = {
   "pen": 0,
   "eraser": 1,
   "fillBucket": 2,
-}
+} as const
 
 class Board {
   /** The canvas */
@@ -95,9 +95,9 @@ class Board {
         filler(x, y, this.data[x][y])
       } else if (tools[Tool.eraser]) {
         const temp = this.color
-        this.setcolor([0, 0, 0, 0])
+        this.color = [0, 0, 0, 0]
         this.draw(x, y)
-        this.setcolor(temp)
+        this.color = temp
       } else {
         // Pen tool
         this.draw(x, y, true)
@@ -108,12 +108,21 @@ class Board {
   draw(x: number, y: number, isEdit = false) {
     if (x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight) {
       this.data[x][y] = this.color
+      this.ctx.clearRect(
+        Math.floor(x * (this.canvasWidth / this.dataWidth)),
+        Math.floor(y * (this.canvasHeight / this.dataHeight)),
+        Math.floor(this.canvasWidth / this.dataWidth),
+        Math.floor(this.canvasHeight / this.dataHeight),
+      )
+      this.ctx.fillStyle = toCssColor(this.color)
       this.ctx.fillRect(
         Math.floor(x * (this.canvasWidth / this.dataWidth)),
         Math.floor(y * (this.canvasHeight / this.dataHeight)),
         Math.floor(this.canvasWidth / this.dataWidth),
         Math.floor(this.canvasHeight / this.dataHeight),
       )
+      this.miniCtx.clearRect(x, y, 1, 1)
+      this.ctx.fillStyle = toCssColor(this.color)
       this.miniCtx.fillRect(x, y, 1, 1)
       if (isEdit) {
         postMessageToExtention({
@@ -127,23 +136,12 @@ class Board {
     }
   }
 
-  erase(x: number, y: number) {
-    const temp = this.color
-    this.setcolor([0, 0, 0, 0])
-    this.draw(x, y, true)
-    this.setcolor(temp)
-  }
-
-  setcolor(color: Color) {
-    this.color = color
-    this.miniCtx.fillStyle = this.ctx.fillStyle = toCssColor(color)
-  }
-
   setmode(i: number) {
+    console.log("setmode", i)
     tools = [false, false, false]
     tools[i] = true
     document.querySelectorAll<HTMLElement>("#toolbar .item").forEach((x, i) => {
-      if (tools[i]) x.style.backgroundColor = "grey"
+      if (tools[i]) x.style.backgroundColor = "#777"
       else x.style.backgroundColor = ""
     })
   }
@@ -157,7 +155,7 @@ class Board {
   }
 
   applyEdit(edit: Edit) {
-    this.setcolor(edit.color)
+    this.color = edit.color
     for (const [x, y] of edit.stroke) {
       this.draw(x, y, false)
     }
@@ -178,7 +176,7 @@ class Board {
         for (let i = 0; i < this.dataWidth; i++) {
           for (let j = 0; j < this.dataHeight; j++) {
             const pixel = pxctx.getImageData(i, j, 1, 1).data
-            this.setcolor([pixel[0], pixel[1], pixel[2], pixel[3]])
+            this.color = [pixel[0], pixel[1], pixel[2], pixel[3]]
             this.draw(i, j, false)
           }
         }
@@ -222,6 +220,14 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
+function Tools({ on }: Context) {
+  on("click", ".item", (e) => {
+    const item = e.target as HTMLElement
+    const index = Number(item.dataset.index)
+    board.setmode(index)
+  })
+}
+
 /** Palette UI Component */
 function Palette({ on, queryAll }: Context) {
   // TODO(kt3k): Get colors from somewhere in disk
@@ -254,7 +260,7 @@ function Palette({ on, queryAll }: Context) {
   on("click", ".item", (e) => {
     const item = e.target as HTMLElement
     const color = item.dataset.color!.split(",").map(Number) as any as Color
-    board.setcolor(color)
+    board.color = color
     queryAll<HTMLElement>("#palette .item").forEach((x) =>
       x.style.boxShadow = ""
     )
@@ -294,7 +300,7 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
       break
     }
     case "new": {
-      // to be implemented
+      // TODO: Implement new
       break
     }
     case "getBytes": {
@@ -307,9 +313,11 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
     }
     case "update": {
       board.update(e.data.doc.dataUri, e.data.doc.edits)
+      break
     }
   }
 })
 
 postMessageToExtention({ type: "ready" })
 register(Palette, "js-palette")
+register(Tools, "js-tools")

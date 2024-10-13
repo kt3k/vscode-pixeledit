@@ -19,11 +19,14 @@
           <canvas class="mini-canvas" id="canvas-mini"></canvas>
         </span>
       </div>
-      <canvas id="canvas"></canvas>
-      <div id="toolbar">
-        <span class="item" onclick="board.setmode(0)">✏️</span>
-        <span class="item" onclick="board.setmode(1)">消</span>
-        <span class="item" onclick="board.setmode(2)">塗</span>
+      <canvas
+        id="canvas"
+        style="background: linear-gradient(#303, #202)"
+      ></canvas>
+      <div id="toolbar" class="js-tools">
+        <span class="item" data-index="0">✏️</span>
+        <span class="item" data-index="1">消</span>
+        <span class="item" data-index="2">塗</span>
       </div>
       <div id="palette" class="js-palette"></div>
     </div>
