@@ -1,65 +1,6 @@
 /* Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license. */
 /* Copyright 2021 PixelCraft. All rights reserved. MIT license. */
 
-body {
-  margin: 0px;
-}
-
-#popup {
-  background-color: #332f35;
-  color: white;
-  font-size: 20px;
-  padding: 30px;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.1, 0.1);
-  text-align: center;
-  max-width: 420px;
-  width: 70%;
-  transition: 0.2s all;
-  z-index: 2;
-  border-radius: 5px;
-}
-#popup {
-  display: none;
-}
-#popup h3 {
-  line-height: 30px;
-}
-
-#width,
-#height {
-  background-color: #262327;
-  color: white;
-  margin: 10px;
-  padding: 5px;
-  font-size: 14px;
-  font-weight: bolder;
-  border: none;
-  border-radius: 3px;
-  max-width: 60px;
-}
-
-#close {
-  background-color: #262327;
-  color: white;
-  margin: 15px auto 5px auto;
-  padding: 5px 10px 5px 10px;
-  font-size: 18px;
-  font-weight: bolder;
-  display: block;
-  border: none;
-  border-radius: 3px;
-  max-width: 60px;
-  transition: 0.2s all;
-}
-
-#close:hover {
-  box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.5);
-}
-
 #canvas {
   box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.5);
   position: fixed;
@@ -169,8 +110,4 @@ path {
 .menu li a {
   text-decoration: none;
   color: white;
-}
-
-.hidden {
-  display: none !important;
 }

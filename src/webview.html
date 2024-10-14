@@ -5,15 +5,6 @@
     <link rel="stylesheet" href="${tailwindUri}" />
   </head>
   <body>
-    <div id="popup">
-      <h3>Select the Dimensions Of the grid</h3>
-      <input type="text" id="width" value="16" />X<input
-        type="text"
-        id="height"
-        value="16"
-      />
-      <button id="close">OK</button>
-    </div>
     <div class="board">
       <div class="mini-canvas-wrapper hidden">
         <span>
@@ -28,14 +19,17 @@
         <span
           class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
           data-index="0"
+          data-tool="pen"
         >✏️</span>
         <span
           class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
           data-index="1"
+          data-tool="eraser"
         >消</span>
         <span
           class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
           data-index="2"
+          data-tool="fill"
         >塗</span>
       </div>
       <div id="palette" class="js-palette"></div>

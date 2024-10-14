@@ -13,14 +13,12 @@ import type {
   WebviewMessage,
 } from "./types.ts"
 
-const vscode = acquireVsCodeApi()
-
-function postMessageToExtention(message: WebviewMessage) {
-  vscode.postMessage(message)
-}
-
 let board: Board
-let tools = [true, false, false] as [boolean, boolean, boolean]
+
+const TOOL_PEN = "pen"
+const TOOL_ERASER = "eraser"
+const TOOL_FILL = "fill"
+let currentTool = TOOL_PEN
 
 function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -32,12 +30,6 @@ function toHex(c: Color) {
   const b = c[2].toString(16).padStart(2, "0")
   return `#${r}${g}${b}`
 }
-
-const Tool = {
-  "pen": 0,
-  "eraser": 1,
-  "fillBucket": 2,
-} as const
 
 class Board {
   /** The canvas */
@@ -91,9 +83,9 @@ class Board {
       let y = e.clientY - rect.top
       x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
       y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
-      if (tools[Tool.fillBucket]) {
+      if (currentTool === TOOL_FILL) {
         filler(x, y, this.data[x][y])
-      } else if (tools[Tool.eraser]) {
+      } else if (currentTool === TOOL_ERASER) {
         const temp = this.color
         this.color = [0, 0, 0, 0]
         this.draw(x, y)
@@ -134,9 +126,6 @@ class Board {
         })
       }
     }
-  }
-
-  setmode(i: number) {
   }
 
   async update(dataUri: string, edits: Edit[]) {
@@ -204,6 +193,21 @@ class Board {
   }
 }
 
+function filler(x: number, y: number, cc: Color) {
+  if (x >= 0 && x < board.dataWidth && y >= 0 && y < board.dataHeight) {
+    if (
+      JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
+      JSON.stringify(board.data[x][y]) != JSON.stringify(board.color)
+    ) {
+      board.draw(x, y)
+      filler(x + 1, y, cc)
+      filler(x, y + 1, cc)
+      filler(x - 1, y, cc)
+      filler(x, y - 1, cc)
+    }
+  }
+}
+
 function loadImage(uri: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image()
@@ -216,8 +220,8 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
 function Tools({ on, queryAll }: Context) {
   on("click", ".item", ({ target }) => {
     const item = target as HTMLElement
-    tools = [false, false, false]
-    tools[Number(item.dataset.index)] = true
+    // deno-lint-ignore no-explicit-any
+    currentTool = item.dataset.tool as any
     queryAll<HTMLElement>(".item").forEach((x) => {
       x.classList.toggle("bg-gray-500", false)
     })
@@ -274,19 +278,9 @@ function Palette({ on, queryAll }: Context) {
   ).join("\n")
 }
 
-function filler(x: number, y: number, cc: Color) {
-  if (x >= 0 && x < board.dataWidth && y >= 0 && y < board.dataHeight) {
-    if (
-      JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
-      JSON.stringify(board.data[x][y]) != JSON.stringify(board.color)
-    ) {
-      board.draw(x, y)
-      filler(x + 1, y, cc)
-      filler(x, y + 1, cc)
-      filler(x - 1, y, cc)
-      filler(x, y - 1, cc)
-    }
-  }
+const vscode = acquireVsCodeApi()
+function postMessageToExtention(message: WebviewMessage) {
+  vscode.postMessage(message)
 }
 
 globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
