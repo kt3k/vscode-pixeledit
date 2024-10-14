@@ -90,28 +90,6 @@ body {
   border-radius: 50%;
 }
 
-#toolbar {
-  position: fixed;
-  top: 50%;
-  left: 0%;
-  transform: translateY(-50%);
-  padding: 0px;
-  color: white;
-  max-width: 150px;
-}
-
-#toolbar .item {
-  display: inline-block;
-  float: left;
-  padding: 15px;
-  border: 1px solid #fff;
-  cursor: pointer;
-  height: 32px;
-  width: 32px;
-  font-family: Arial, FontAwesome;
-  font-size: 24px;
-}
-
 #palette {
   position: fixed;
   top: 50%;

@@ -2,6 +2,7 @@
 <html>
   <head>
     <link rel="stylesheet" href="${styleUri}" />
+    <link rel="stylesheet" href="${tailwindUri}" />
   </head>
   <body>
     <div id="popup">
@@ -23,10 +24,19 @@
         id="canvas"
         style="background: linear-gradient(#303, #202)"
       ></canvas>
-      <div id="toolbar" class="js-tools">
-        <span class="item" data-index="0">✏️</span>
-        <span class="item" data-index="1">消</span>
-        <span class="item" data-index="2">塗</span>
+      <div class="js-tools fixed left-0 grid grid-cols-2">
+        <span
+          class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
+          data-index="0"
+        >✏️</span>
+        <span
+          class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
+          data-index="1"
+        >消</span>
+        <span
+          class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
+          data-index="2"
+        >塗</span>
       </div>
       <div id="palette" class="js-palette"></div>
     </div>

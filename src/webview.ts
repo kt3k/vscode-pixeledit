@@ -219,9 +219,9 @@ function Tools({ on, queryAll }: Context) {
     tools = [false, false, false]
     tools[Number(item.dataset.index)] = true
     queryAll<HTMLElement>(".item").forEach((x) => {
-      x.style.backgroundColor = ""
+      x.classList.toggle("bg-gray-500", false)
     })
-    item.style.backgroundColor = "#777"
+    item.classList.toggle("bg-gray-500", true)
   })
 }
 
