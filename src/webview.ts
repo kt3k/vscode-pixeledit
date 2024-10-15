@@ -4,7 +4,7 @@
 /// <reference lib="dom" />
 /// <reference path="../node_modules/@types/vscode-webview/index.d.ts" />
 
-import { type Context, register } from "@kt3k/cell"
+import { type Context, register, Signal } from "@kt3k/cell"
 
 import type {
   Color,
@@ -15,10 +15,8 @@ import type {
 
 let board: Board
 
-const TOOL_PEN = "pen"
-const TOOL_ERASER = "eraser"
-const TOOL_FILL = "fill"
-let currentTool = TOOL_PEN
+type Tool = "pen" | "eraser" | "fill"
+const currentTool = new Signal<Tool>("pen")
 
 function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -28,7 +26,7 @@ function toHex(c: Color) {
   const r = c[0].toString(16).padStart(2, "0")
   const g = c[1].toString(16).padStart(2, "0")
   const b = c[2].toString(16).padStart(2, "0")
-  return `#${r}${g}${b}`
+  return "#" + r + g + b
 }
 
 class Board {
@@ -83,9 +81,9 @@ class Board {
       let y = e.clientY - rect.top
       x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
       y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
-      if (currentTool === TOOL_FILL) {
+      if (currentTool.get() === "fill") {
         filler(x, y, this.data[x][y])
-      } else if (currentTool === TOOL_ERASER) {
+      } else if (currentTool.get() === "eraser") {
         const temp = this.color
         this.color = [0, 0, 0, 0]
         this.draw(x, y)
@@ -117,7 +115,7 @@ class Board {
       this.ctx.fillStyle = toCssColor(this.color)
       this.miniCtx.fillRect(x, y, 1, 1)
       if (isEdit) {
-        postMessageToExtention({
+        postMessage({
           type: "edit",
           edit: {
             color: this.color,
@@ -217,11 +215,12 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
+/** Tools UI component */
 function Tools({ on, queryAll }: Context) {
   on("click", ".item", ({ target }) => {
     const item = target as HTMLElement
     // deno-lint-ignore no-explicit-any
-    currentTool = item.dataset.tool as any
+    currentTool.update(item.dataset.tool as any)
     queryAll<HTMLElement>(".item").forEach((x) => {
       x.classList.toggle("bg-gray-500", false)
     })
@@ -279,7 +278,7 @@ function Palette({ on, queryAll }: Context) {
 }
 
 const vscode = acquireVsCodeApi()
-function postMessageToExtention(message: WebviewMessage) {
+function postMessage(message: WebviewMessage) {
   vscode.postMessage(message)
 }
 
@@ -295,7 +294,7 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
       break
     }
     case "getBytes": {
-      postMessageToExtention({
+      postMessage({
         type: "response",
         requestId: e.data.requestId,
         body: board.exportImage(),
@@ -309,6 +308,6 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   }
 })
 
-postMessageToExtention({ type: "ready" })
+postMessage({ type: "ready" })
 register(Palette, "js-palette")
 register(Tools, "js-tools")

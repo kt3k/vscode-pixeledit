@@ -10,6 +10,6 @@
   },
   "nodeModulesDir": "auto",
   "imports": {
-    "@kt3k/cell": "jsr:@kt3k/cell@^0.3.6"
+    "@kt3k/cell": "jsr:@kt3k/cell@^0.7.5"
   }
 }
