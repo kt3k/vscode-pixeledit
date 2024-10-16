@@ -112,14 +112,11 @@ class Board {
       if (currentTool.get() === "fill") {
         filler(x, y, this.data[x][y])
       } else if (currentTool.get() === "eraser") {
-        const temp = currentColor.get()
-        currentColor.update([0, 0, 0, 0])
-        this.draw(x, y)
+        this.draw(x, y, [0, 0, 0, 0])
         this.saveEdit([[x, y]], [0, 0, 0, 0])
-        currentColor.update(temp)
       } else {
         // Pen tool
-        this.draw(x, y)
+        this.draw(x, y, currentColor.get())
         this.saveEdit([[x, y]], currentColor.get())
       }
     })
@@ -139,8 +136,7 @@ class Board {
     })
   }
 
-  draw(x: number, y: number) {
-    const color = currentColor.get()
+  draw(x: number, y: number, color: Color) {
     this.data[x][y] = color
     this.ctx.clearRect(
       Math.floor(x * (this.canvasWidth / this.dataWidth)),
@@ -169,9 +165,8 @@ class Board {
   }
 
   applyEdit(edit: Edit) {
-    currentColor.update(edit.color)
     for (const [x, y] of edit.stroke) {
-      this.draw(x, y)
+      this.draw(x, y, edit.color)
     }
   }
 
@@ -190,8 +185,7 @@ class Board {
         for (let i = 0; i < this.dataWidth; i++) {
           for (let j = 0; j < this.dataHeight; j++) {
             const pixel = pxctx.getImageData(i, j, 1, 1).data
-            currentColor.update([pixel[0], pixel[1], pixel[2], pixel[3]])
-            this.draw(i, j)
+            this.draw(i, j, [pixel[0], pixel[1], pixel[2], pixel[3]])
           }
         }
         resolve()
@@ -231,7 +225,7 @@ function filler(x: number, y: number, cc: Color) {
       JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
       JSON.stringify(board.data[x][y]) != JSON.stringify(currentColor.get())
     ) {
-      board.draw(x, y)
+      board.draw(x, y, currentColor.get())
       filler(x + 1, y, cc)
       filler(x, y + 1, cc)
       filler(x - 1, y, cc)
