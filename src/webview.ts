@@ -17,6 +17,31 @@ let board: Board
 
 type Tool = "pen" | "eraser" | "fill"
 const currentTool = new Signal<Tool>("pen")
+const paletteColors = new Signal<Color[]>([
+  [0, 0, 0, 255],
+  [0x7c, 0x7c, 0x7c, 255],
+  [0xbc, 0xbc, 0xbc, 255],
+  [0xf8, 0xf8, 0xf8, 255],
+  [0xfc, 0xfc, 0xfc, 255],
+  [237, 28, 36, 255],
+  [255, 127, 39, 255],
+  [255, 242, 0, 255],
+  [34, 177, 36, 255],
+  [0, 162, 232, 255],
+  [63, 72, 204, 255],
+  [163, 73, 164, 255],
+  [255, 255, 255, 255],
+  [195, 195, 195, 255],
+  [185, 122, 87, 255],
+  [255, 174, 201, 255],
+  [255, 201, 14, 255],
+  [239, 228, 176, 255],
+  [181, 230, 29, 255],
+  [153, 217, 234, 255],
+  [112, 146, 190, 255],
+  [200, 191, 231, 255],
+])
+const currentColor = new Signal<Color>([0, 0, 0, 255])
 
 function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -87,15 +112,15 @@ class Board {
       if (currentTool.get() === "fill") {
         filler(x, y, this.data[x][y])
       } else if (currentTool.get() === "eraser") {
-        const temp = this.color
-        this.color = [0, 0, 0, 0]
+        const temp = currentColor.get()
+        currentColor.update([0, 0, 0, 0])
         this.draw(x, y)
-        this.saveEdit([[x, y]], this.color)
-        this.color = temp
+        this.saveEdit([[x, y]], [0, 0, 0, 0])
+        currentColor.update(temp)
       } else {
         // Pen tool
         this.draw(x, y)
-        this.saveEdit([[x, y]], this.color)
+        this.saveEdit([[x, y]], currentColor.get())
       }
     })
   }
@@ -114,15 +139,16 @@ class Board {
     })
   }
 
-  draw(x: number, y: number, isEdit = false) {
-    this.data[x][y] = this.color
+  draw(x: number, y: number) {
+    const color = currentColor.get()
+    this.data[x][y] = color
     this.ctx.clearRect(
       Math.floor(x * (this.canvasWidth / this.dataWidth)),
       Math.floor(y * (this.canvasHeight / this.dataHeight)),
       Math.floor(this.canvasWidth / this.dataWidth),
       Math.floor(this.canvasHeight / this.dataHeight),
     )
-    this.ctx.fillStyle = toCssColor(this.color)
+    this.ctx.fillStyle = toCssColor(color)
     this.ctx.fillRect(
       Math.floor(x * (this.canvasWidth / this.dataWidth)),
       Math.floor(y * (this.canvasHeight / this.dataHeight)),
@@ -130,7 +156,7 @@ class Board {
       Math.floor(this.canvasHeight / this.dataHeight),
     )
     this.miniCtx.clearRect(x, y, 1, 1)
-    this.ctx.fillStyle = toCssColor(this.color)
+    this.ctx.fillStyle = toCssColor(color)
     this.miniCtx.fillRect(x, y, 1, 1)
   }
 
@@ -143,7 +169,7 @@ class Board {
   }
 
   applyEdit(edit: Edit) {
-    this.color = edit.color
+    currentColor.update(edit.color)
     for (const [x, y] of edit.stroke) {
       this.draw(x, y)
     }
@@ -164,7 +190,7 @@ class Board {
         for (let i = 0; i < this.dataWidth; i++) {
           for (let j = 0; j < this.dataHeight; j++) {
             const pixel = pxctx.getImageData(i, j, 1, 1).data
-            this.color = [pixel[0], pixel[1], pixel[2], pixel[3]]
+            currentColor.update([pixel[0], pixel[1], pixel[2], pixel[3]])
             this.draw(i, j)
           }
         }
@@ -203,7 +229,7 @@ function filler(x: number, y: number, cc: Color) {
   if (x >= 0 && x < board.dataWidth && y >= 0 && y < board.dataHeight) {
     if (
       JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
-      JSON.stringify(board.data[x][y]) != JSON.stringify(board.color)
+      JSON.stringify(board.data[x][y]) != JSON.stringify(currentColor.get())
     ) {
       board.draw(x, y)
       filler(x + 1, y, cc)
@@ -237,52 +263,32 @@ function Tools({ on, queryAll }: Context) {
 }
 
 /** Palette UI Component */
-function Palette({ on, queryAll }: Context) {
-  // TODO(kt3k): Get colors from somewhere in disk
-  // ex. ./palette.json
-  const colors: Color[] = [
-    [0, 0, 0, 255],
-    [0x7c, 0x7c, 0x7c, 255],
-    [0xbc, 0xbc, 0xbc, 255],
-    [0xf8, 0xf8, 0xf8, 255],
-    [0xfc, 0xfc, 0xfc, 255],
-    [237, 28, 36, 255],
-    [255, 127, 39, 255],
-    [255, 242, 0, 255],
-    [34, 177, 36, 255],
-    [0, 162, 232, 255],
-    [63, 72, 204, 255],
-    [163, 73, 164, 255],
-    [255, 255, 255, 255],
-    [195, 195, 195, 255],
-    [185, 122, 87, 255],
-    [255, 174, 201, 255],
-    [255, 201, 14, 255],
-    [239, 228, 176, 255],
-    [181, 230, 29, 255],
-    [153, 217, 234, 255],
-    [112, 146, 190, 255],
-    [200, 191, 231, 255],
-  ]
-
+function Palette({ el, on, queryAll, subscribe }: Context) {
   on("click", ".item", (e) => {
     const item = e.target as HTMLElement
-    const color = item.dataset.color!.split(",").map(Number) as any as Color
-    board.color = color
-    queryAll<HTMLElement>("#palette .item").forEach((x) =>
-      x.style.boxShadow = ""
-    )
-    item.style.boxShadow = "0px 0px 1px 1px white inset"
+    currentColor.update(JSON.parse(item.dataset.color!))
   })
 
-  return colors.map((color) =>
-    `<span
-       class="item"
-       data-color="${color}"
-       style="background-color: ${toCssColor(color)};">
-      <span>${toHex(color)}</span>
-    </span>`
-  ).join("\n")
+  subscribe(paletteColors, (colors) => {
+    el.innerHTML = colors.map((color) =>
+      `<span
+         class="item"
+         data-color="${JSON.stringify(color)}"
+         style="background-color: ${toCssColor(color)};">
+        <span>${toHex(color)}</span>
+      </span>`
+    ).join("\n")
+  })
+
+  subscribe(currentColor, (color) => {
+    queryAll<HTMLElement>(".item").forEach((x) => {
+      if (x.dataset.color === JSON.stringify(color)) {
+        x.style.boxShadow = "0px 0px 1px 1px white inset"
+      } else {
+        x.style.boxShadow = ""
+      }
+    })
+  })
 }
 
 const vscode = acquireVsCodeApi()
@@ -316,6 +322,6 @@ globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
   }
 })
 
-postMessage({ type: "ready" })
 register(Palette, "js-palette")
 register(Tools, "js-tools")
+postMessage({ type: "ready" })
