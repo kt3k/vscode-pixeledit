@@ -81,49 +81,57 @@ class Board {
       let y = e.clientY - rect.top
       x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
       y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
+      if (!this.validCoords(x, y)) {
+        return
+      }
       if (currentTool.get() === "fill") {
         filler(x, y, this.data[x][y])
       } else if (currentTool.get() === "eraser") {
         const temp = this.color
         this.color = [0, 0, 0, 0]
         this.draw(x, y)
+        this.saveEdit([[x, y]], this.color)
         this.color = temp
       } else {
         // Pen tool
-        this.draw(x, y, true)
+        this.draw(x, y)
+        this.saveEdit([[x, y]], this.color)
       }
     })
   }
 
+  validCoords(x: number, y: number) {
+    return x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight
+  }
+
+  saveEdit(stroke: [number, number][], color: Color) {
+    postMessage({
+      type: "edit",
+      edit: {
+        color,
+        stroke,
+      },
+    })
+  }
+
   draw(x: number, y: number, isEdit = false) {
-    if (x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight) {
-      this.data[x][y] = this.color
-      this.ctx.clearRect(
-        Math.floor(x * (this.canvasWidth / this.dataWidth)),
-        Math.floor(y * (this.canvasHeight / this.dataHeight)),
-        Math.floor(this.canvasWidth / this.dataWidth),
-        Math.floor(this.canvasHeight / this.dataHeight),
-      )
-      this.ctx.fillStyle = toCssColor(this.color)
-      this.ctx.fillRect(
-        Math.floor(x * (this.canvasWidth / this.dataWidth)),
-        Math.floor(y * (this.canvasHeight / this.dataHeight)),
-        Math.floor(this.canvasWidth / this.dataWidth),
-        Math.floor(this.canvasHeight / this.dataHeight),
-      )
-      this.miniCtx.clearRect(x, y, 1, 1)
-      this.ctx.fillStyle = toCssColor(this.color)
-      this.miniCtx.fillRect(x, y, 1, 1)
-      if (isEdit) {
-        postMessage({
-          type: "edit",
-          edit: {
-            color: this.color,
-            stroke: [[x, y]],
-          },
-        })
-      }
-    }
+    this.data[x][y] = this.color
+    this.ctx.clearRect(
+      Math.floor(x * (this.canvasWidth / this.dataWidth)),
+      Math.floor(y * (this.canvasHeight / this.dataHeight)),
+      Math.floor(this.canvasWidth / this.dataWidth),
+      Math.floor(this.canvasHeight / this.dataHeight),
+    )
+    this.ctx.fillStyle = toCssColor(this.color)
+    this.ctx.fillRect(
+      Math.floor(x * (this.canvasWidth / this.dataWidth)),
+      Math.floor(y * (this.canvasHeight / this.dataHeight)),
+      Math.floor(this.canvasWidth / this.dataWidth),
+      Math.floor(this.canvasHeight / this.dataHeight),
+    )
+    this.miniCtx.clearRect(x, y, 1, 1)
+    this.ctx.fillStyle = toCssColor(this.color)
+    this.miniCtx.fillRect(x, y, 1, 1)
   }
 
   async update(dataUri: string, edits: Edit[]) {
@@ -137,7 +145,7 @@ class Board {
   applyEdit(edit: Edit) {
     this.color = edit.color
     for (const [x, y] of edit.stroke) {
-      this.draw(x, y, false)
+      this.draw(x, y)
     }
   }
 
@@ -157,7 +165,7 @@ class Board {
           for (let j = 0; j < this.dataHeight; j++) {
             const pixel = pxctx.getImageData(i, j, 1, 1).data
             this.color = [pixel[0], pixel[1], pixel[2], pixel[3]]
-            this.draw(i, j, false)
+            this.draw(i, j)
           }
         }
         resolve()
