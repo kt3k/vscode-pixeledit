@@ -17,6 +17,13 @@ let board: Board
 
 type Tool = "pen" | "eraser" | "fill"
 const currentTool = new Signal<Tool>("pen")
+type ToolBtn = { tool: Tool; label: string }
+const toolBtns: ToolBtn[] = [
+  { tool: "pen", label: "✒️" },
+  { tool: "eraser", label: "消" },
+  { tool: "fill", label: "塗" },
+]
+
 const paletteColors = new Signal<Color[]>([
   [0, 0, 0, 255],
   [0x7c, 0x7c, 0x7c, 255],
@@ -244,15 +251,24 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
 }
 
 /** Tools UI component */
-function Tools({ on, queryAll }: Context) {
+function Tools({ el, on, queryAll, subscribe }: Context) {
   on("click", ".item", ({ target }) => {
     const item = target as HTMLElement
     // deno-lint-ignore no-explicit-any
     currentTool.update(item.dataset.tool as any)
+  })
+
+  el.innerHTML = toolBtns.map((btn) => `
+    <span
+      class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
+      data-tool="${btn.tool}"
+    >${btn.label}</span>
+  `).join("")
+
+  subscribe(currentTool, (tool) => {
     queryAll<HTMLElement>(".item").forEach((x) => {
-      x.classList.toggle("bg-gray-500", false)
+      x.classList.toggle("bg-gray-500", x.dataset.tool === tool)
     })
-    item.classList.toggle("bg-gray-500", true)
   })
 }
 
