@@ -54,6 +54,16 @@ function toHex(c: Color) {
   return "#" + r + g + b
 }
 
+function saveEdit(stroke: [number, number][], color: Color) {
+  postMessage({
+    type: "edit",
+    edit: {
+      color,
+      stroke,
+    },
+  })
+}
+
 class Board {
   /** The canvas */
   canvas: HTMLCanvasElement
@@ -113,27 +123,17 @@ class Board {
         filler(x, y, this.data[x][y])
       } else if (currentTool.get() === "eraser") {
         this.draw(x, y, [0, 0, 0, 0])
-        this.saveEdit([[x, y]], [0, 0, 0, 0])
+        saveEdit([[x, y]], [0, 0, 0, 0])
       } else {
         // Pen tool
         this.draw(x, y, currentColor.get())
-        this.saveEdit([[x, y]], currentColor.get())
+        saveEdit([[x, y]], currentColor.get())
       }
     })
   }
 
   validCoords(x: number, y: number) {
     return x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight
-  }
-
-  saveEdit(stroke: [number, number][], color: Color) {
-    postMessage({
-      type: "edit",
-      edit: {
-        color,
-        stroke,
-      },
-    })
   }
 
   draw(x: number, y: number, color: Color) {
@@ -152,7 +152,7 @@ class Board {
       Math.floor(this.canvasHeight / this.dataHeight),
     )
     this.miniCtx.clearRect(x, y, 1, 1)
-    this.ctx.fillStyle = toCssColor(color)
+    this.miniCtx.fillStyle = toCssColor(color)
     this.miniCtx.fillRect(x, y, 1, 1)
   }
 
@@ -266,7 +266,7 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   subscribe(paletteColors, (colors) => {
     el.innerHTML = colors.map((color) =>
       `<span
-         class="item"
+         class="item hover:border hover:border-gray-500"
          data-color="${JSON.stringify(color)}"
          style="background-color: ${toCssColor(color)};">
         <span>${toHex(color)}</span>

@@ -620,3 +620,12 @@ video {
   font-size: 1.5rem;
   line-height: 2rem;
 }
+
+.hover\:border:hover {
+  border-width: 1px;
+}
+
+.hover\:border-gray-500:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(107 114 128 / var(--tw-border-opacity));
+}

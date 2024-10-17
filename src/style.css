@@ -62,14 +62,6 @@ path {
   fill: white;
 }
 
-.display-none {
-  display: none;
-}
-
-.item:hover {
-  background-color: grey;
-}
-
 .menubtn {
   position: fixed;
   left: 20px;
