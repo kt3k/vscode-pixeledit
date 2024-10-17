@@ -266,10 +266,16 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   subscribe(paletteColors, (colors) => {
     el.innerHTML = colors.map((color) =>
       `<span
-         class="item hover:border hover:border-gray-500"
+         class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer"
          data-color="${JSON.stringify(color)}"
-         style="background-color: ${toCssColor(color)};">
-        <span>${toHex(color)}</span>
+         style="background-color: ${toCssColor(color)};"
+      >
+        <span
+          class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center"
+          style="font-size: 0.5rem;"
+        >
+          ${toHex(color)}
+        </span>
       </span>`
     ).join("\n")
   })

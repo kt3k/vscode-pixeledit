@@ -18,21 +18,22 @@
       <div class="js-tools fixed left-0 grid grid-cols-2">
         <span
           class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
-          data-index="0"
           data-tool="pen"
         >✏️</span>
         <span
           class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
-          data-index="1"
           data-tool="eraser"
         >消</span>
         <span
           class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
-          data-index="2"
           data-tool="fill"
         >塗</span>
       </div>
-      <div id="palette" class="js-palette"></div>
+      <div
+        id="palette"
+        class="js-palette fixed right-0 top-0 w-24 grid grid-cols-2"
+      >
+      </div>
     </div>
   </body>
   <script src="${scriptUri}" type="module"></script>
