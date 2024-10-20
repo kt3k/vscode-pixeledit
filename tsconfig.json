@@ -10,6 +10,7 @@
   },
   "exclude": [
     "node_modules",
-    "src/webview.ts"
+    "src/webview.ts",
+    "src/webview_test.ts"
   ]
 }

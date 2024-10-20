@@ -8,6 +8,12 @@
       ".vscode-test"
     ]
   },
+  "test": {
+    "exclude": [
+      "out",
+      "src/test"
+    ]
+  },
   "nodeModulesDir": "auto",
   "imports": {
     "@kt3k/cell": "jsr:@kt3k/cell@^0.7.5"
