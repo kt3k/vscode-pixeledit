@@ -10,6 +10,7 @@ import type {
   Color,
   Edit,
   ExtensionMessageEvent,
+  Stroke,
   WebviewMessage,
 } from "./types.ts"
 
@@ -50,25 +51,15 @@ const paletteColors = new Signal<Color[]>([
 ])
 const currentColor = new Signal<Color>([0, 0, 0, 255])
 
-function toCssColor(c: Color) {
+export function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
 }
 
-function toHex(c: Color) {
+export function toHex(c: Color) {
   const r = c[0].toString(16).padStart(2, "0")
   const g = c[1].toString(16).padStart(2, "0")
   const b = c[2].toString(16).padStart(2, "0")
   return "#" + r + g + b
-}
-
-function saveEdit(stroke: [number, number][], color: Color) {
-  postMessage({
-    type: "edit",
-    edit: {
-      color,
-      stroke,
-    },
-  })
 }
 
 class Board {
@@ -307,7 +298,20 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   })
 }
 
-const vscode = acquireVsCodeApi()
+function saveEdit(stroke: [number, number][], color: Color) {
+  postMessage({
+    type: "edit",
+    edit: {
+      color,
+      stroke,
+    },
+  })
+}
+
+// deno-lint-ignore no-explicit-any
+export const vscode: any = typeof Deno === "object"
+  ? { postMessage: () => {} }
+  : acquireVsCodeApi()
 function postMessage(message: WebviewMessage) {
   vscode.postMessage(message)
 }

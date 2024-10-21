@@ -1,8 +1,10 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@kt3k/cell@~0.7.5": "0.7.5",
+    "jsr:@kt3k/cell@~0.7.6": "0.7.6",
     "jsr:@kt3k/signal@0.3": "0.3.0",
+    "jsr:@std/assert@^1.0.6": "1.0.6",
+    "jsr:@std/internal@^1.0.4": "1.0.4",
     "npm:@types/node@^20.14.9": "20.16.5",
     "npm:@types/vscode-webview@^1.57.4": "1.57.5",
     "npm:@types/vscode@^1.85.0": "1.93.0",
@@ -16,14 +18,23 @@
     "npm:typescript@^5.3.3": "5.5.4"
   },
   "jsr": {
-    "@kt3k/cell@0.7.5": {
-      "integrity": "a069684486f7f3770c75ed5320ebd991be2f107e3244ab2304be93d227834cb9",
+    "@kt3k/cell@0.7.6": {
+      "integrity": "f5b7bdf5a75d434959d14d6fa2d426d976ed84f8a8d7d7a60ccd76683bf2deb3",
       "dependencies": [
         "jsr:@kt3k/signal"
       ]
     },
     "@kt3k/signal@0.3.0": {
       "integrity": "5279863b78cbe475a8606864122abaad600e508e08eec7fff126f05c81aad7ff"
+    },
+    "@std/assert@1.0.6": {
+      "integrity": "1904c05806a25d94fe791d6d883b685c9e2dcd60e4f9fc30f4fc5cf010c72207",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.4": {
+      "integrity": "62e8e4911527e5e4f307741a795c0b0a9e6958d0b3790716ae71ce085f755422"
     }
   },
   "npm": {
@@ -1947,7 +1958,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@kt3k/cell@~0.7.5"
+      "jsr:@kt3k/cell@~0.7.6",
+      "jsr:@std/assert@^1.0.6"
     ],
     "packageJson": {
       "dependencies": [

@@ -4,9 +4,11 @@
 
 export type Color = readonly [number, number, number, number]
 
+export type Stroke = ReadonlyArray<[number, number]>
+
 export type Edit = {
   readonly color: Color
-  readonly stroke: ReadonlyArray<[number, number]>
+  readonly stroke: Stroke
 }
 
 export type WebviewMessage = {
