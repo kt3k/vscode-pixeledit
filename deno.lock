@@ -1,10 +1,15 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@b-fuze/deno-dom@~0.1.48": "0.1.48",
     "jsr:@kt3k/cell@~0.7.6": "0.7.6",
     "jsr:@kt3k/signal@0.3": "0.3.0",
     "jsr:@std/assert@^1.0.6": "1.0.6",
+    "jsr:@std/data-structures@^1.0.4": "1.0.4",
+    "jsr:@std/fs@^1.0.4": "1.0.4",
     "jsr:@std/internal@^1.0.4": "1.0.4",
+    "jsr:@std/path@^1.0.6": "1.0.6",
+    "jsr:@std/testing@^1.0.3": "1.0.3",
     "npm:@types/node@^20.14.9": "20.16.5",
     "npm:@types/vscode-webview@^1.57.4": "1.57.5",
     "npm:@types/vscode@^1.85.0": "1.93.0",
@@ -18,6 +23,9 @@
     "npm:typescript@^5.3.3": "5.5.4"
   },
   "jsr": {
+    "@b-fuze/deno-dom@0.1.48": {
+      "integrity": "bf5b591aef2e9e9c59adfcbb93a9ecd45bab5b7c8263625beafa5c8f1662e7da"
+    },
     "@kt3k/cell@0.7.6": {
       "integrity": "f5b7bdf5a75d434959d14d6fa2d426d976ed84f8a8d7d7a60ccd76683bf2deb3",
       "dependencies": [
@@ -33,8 +41,30 @@
         "jsr:@std/internal"
       ]
     },
+    "@std/data-structures@1.0.4": {
+      "integrity": "fa0e20c11eb9ba673417450915c750a0001405a784e2a4e0c3725031681684a0"
+    },
+    "@std/fs@1.0.4": {
+      "integrity": "2907d32d8d1d9e540588fd5fe0ec21ee638134bd51df327ad4e443aaef07123c",
+      "dependencies": [
+        "jsr:@std/path"
+      ]
+    },
     "@std/internal@1.0.4": {
       "integrity": "62e8e4911527e5e4f307741a795c0b0a9e6958d0b3790716ae71ce085f755422"
+    },
+    "@std/path@1.0.6": {
+      "integrity": "ab2c55f902b380cf28e0eec501b4906e4c1960d13f00e11cfbcd21de15f18fed"
+    },
+    "@std/testing@1.0.3": {
+      "integrity": "f98c2bee53860a5916727d7e7d3abe920dd6f9edace022e2d059f00d05c2cf42",
+      "dependencies": [
+        "jsr:@std/assert",
+        "jsr:@std/data-structures",
+        "jsr:@std/fs",
+        "jsr:@std/internal",
+        "jsr:@std/path"
+      ]
     }
   },
   "npm": {
@@ -1958,8 +1988,10 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@b-fuze/deno-dom@~0.1.48",
       "jsr:@kt3k/cell@~0.7.6",
-      "jsr:@std/assert@^1.0.6"
+      "jsr:@std/assert@^1.0.6",
+      "jsr:@std/testing@^1.0.3"
     ],
     "packageJson": {
       "dependencies": [

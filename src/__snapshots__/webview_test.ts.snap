@@ -1,0 +1,124 @@
+export const snapshot = {};
+
+snapshot[`js-tools 1`] = `
+'
+    <span class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl bg-gray-500" data-tool="pen">✒️</span>
+  
+    <span class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl" data-tool="eraser">消</span>
+  
+    <span class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl" data-tool="fill">塗</span>
+  '
+`;
+
+snapshot[`js-palette 1`] = `
+'<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[0,0,0,255]" style="background-color: rgba(0,0,0,1);">
+        <span class="text-white bg-opacity-70 absolute bottom-0 w-full text-center bg-yellow-600" style="font-size: 0.5rem;">
+          #000000
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[124,124,124,255]" style="background-color: rgba(124,124,124,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #7c7c7c
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[188,188,188,255]" style="background-color: rgba(188,188,188,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #bcbcbc
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[248,248,248,255]" style="background-color: rgba(248,248,248,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #f8f8f8
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[252,252,252,255]" style="background-color: rgba(252,252,252,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #fcfcfc
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[237,28,36,255]" style="background-color: rgba(237,28,36,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #ed1c24
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[255,127,39,255]" style="background-color: rgba(255,127,39,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #ff7f27
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[255,242,0,255]" style="background-color: rgba(255,242,0,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #fff200
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[34,177,36,255]" style="background-color: rgba(34,177,36,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #22b124
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[0,162,232,255]" style="background-color: rgba(0,162,232,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #00a2e8
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[63,72,204,255]" style="background-color: rgba(63,72,204,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #3f48cc
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[163,73,164,255]" style="background-color: rgba(163,73,164,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #a349a4
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[255,255,255,255]" style="background-color: rgba(255,255,255,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #ffffff
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[195,195,195,255]" style="background-color: rgba(195,195,195,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #c3c3c3
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[185,122,87,255]" style="background-color: rgba(185,122,87,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #b97a57
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[255,174,201,255]" style="background-color: rgba(255,174,201,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #ffaec9
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[255,201,14,255]" style="background-color: rgba(255,201,14,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #ffc90e
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[239,228,176,255]" style="background-color: rgba(239,228,176,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #efe4b0
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[181,230,29,255]" style="background-color: rgba(181,230,29,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #b5e61d
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[153,217,234,255]" style="background-color: rgba(153,217,234,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #99d9ea
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[112,146,190,255]" style="background-color: rgba(112,146,190,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #7092be
+        </span>
+      </span>
+<span class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer" data-color="[200,191,231,255]" style="background-color: rgba(200,191,231,1);">
+        <span class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center" style="font-size: 0.5rem;">
+          #c8bfe7
+        </span>
+      </span>'
+`;

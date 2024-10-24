@@ -289,11 +289,10 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
 
   subscribe(currentColor, (color) => {
     queryAll<HTMLElement>(".item").forEach((x) => {
-      if (x.dataset.color === JSON.stringify(color)) {
-        x.style.boxShadow = "0px 0px 1px 1px white inset"
-      } else {
-        x.style.boxShadow = ""
-      }
+      const active = x.dataset.color === JSON.stringify(color)
+      const child = x.children[0] as HTMLElement
+      child.classList.toggle("bg-gray-800", !active)
+      child.classList.toggle("bg-yellow-600", active)
     })
   })
 }
