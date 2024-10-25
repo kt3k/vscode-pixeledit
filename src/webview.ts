@@ -315,32 +315,23 @@ function postMessage(message: WebviewMessage) {
   vscode.postMessage(message)
 }
 
-globalThis.addEventListener("message", async (e: ExtensionMessageEvent) => {
-  console.log("extension -> webview " + e.data.type, e)
-  switch (e.data.type) {
-    case "init": {
-      board = await Board.import(e.data.dataUri, e.data.edits)
-      break
-    }
-    case "new": {
-      // TODO: Implement new
-      break
-    }
-    case "getBytes": {
-      postMessage({
-        type: "response",
-        requestId: e.data.requestId,
-        body: board.exportImage(),
-      })
-      break
-    }
-    case "update": {
-      board.update(e.data.doc.dataUri, e.data.doc.edits)
-      break
-    }
+const onMessage = async ({ data }: ExtensionMessageEvent) => {
+  const { type } = data
+  if (type === "init") {
+    board = await Board.import(data.dataUri, data.edits)
+  } else if (type === "new") {
+    // TODO: Implement new
+  } else if (type === "getBytes") {
+    postMessage({
+      type: "response",
+      requestId: data.requestId,
+      body: board.exportImage(),
+    })
+  } else if (type === "update") {
+    board.update(data.doc.dataUri, data.doc.edits)
   }
-})
-
+}
+globalThis.addEventListener("message", onMessage)
 register(Palette, "js-palette")
 register(Tools, "js-tools")
 postMessage({ type: "ready" })
