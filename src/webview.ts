@@ -118,7 +118,13 @@ class Board {
         return
       }
       if (currentTool.get() === "fill") {
-        filler(x, y, this.data[x][y])
+        const stoke = Array.from(
+          filler(x, y, this.dataWidth, this.dataHeight, this.data[x][y]),
+        )
+        for (const [x, y] of stoke) {
+          this.draw(x, y, currentColor.get())
+        }
+        saveEdit(stoke, currentColor.get())
       } else if (currentTool.get() === "eraser") {
         this.draw(x, y, [0, 0, 0, 0])
         saveEdit([[x, y]], [0, 0, 0, 0])
@@ -217,19 +223,35 @@ class Board {
   }
 }
 
-function filler(x: number, y: number, cc: Color) {
-  if (x >= 0 && x < board.dataWidth && y >= 0 && y < board.dataHeight) {
-    if (
-      JSON.stringify(board.data[x][y]) == JSON.stringify(cc) &&
-      JSON.stringify(board.data[x][y]) != JSON.stringify(currentColor.get())
-    ) {
-      board.draw(x, y, currentColor.get())
-      filler(x + 1, y, cc)
-      filler(x, y + 1, cc)
-      filler(x - 1, y, cc)
-      filler(x, y - 1, cc)
-    }
+function* filler(
+  x: number,
+  y: number,
+  dataWidth: number,
+  dataHeight: number,
+  cc: Color,
+  cache: Set<string> = new Set(),
+): Generator<[number, number]> {
+  const key = `${x},${y}`
+  console.log(key)
+  if (cache.has(key)) {
+    return
   }
+  if (x < 0 || x >= dataWidth || y < 0 || y >= dataHeight) {
+    return
+  }
+  const color = board.data[x][y]
+  if (
+    cc[0] !== color[0] || cc[1] !== color[1] || cc[2] !== color[2] ||
+    cc[3] !== color[3]
+  ) {
+    return
+  }
+  cache.add(key)
+  yield [x, y]
+  yield* filler(x + 1, y, dataWidth, dataHeight, cc, cache)
+  yield* filler(x, y + 1, dataWidth, dataHeight, cc, cache)
+  yield* filler(x - 1, y, dataWidth, dataHeight, cc, cache)
+  yield* filler(x, y - 1, dataWidth, dataHeight, cc, cache)
 }
 
 function loadImage(uri: string): Promise<HTMLImageElement> {
