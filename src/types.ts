@@ -4,7 +4,7 @@
 
 export type Color = readonly [number, number, number, number]
 
-export type Point = [x: number, y: number]
+export type Point = readonly [x: number, y: number]
 export type Stroke = ReadonlyArray<Point>
 
 export type Edit = {

@@ -119,20 +119,27 @@ class Board {
       if (!this.validCoords(x, y)) {
         return
       }
-      if (currentTool.get() === "fill") {
-        const stoke = fill(x, y, dataWidth, dataHeight, this.data[x][y])
-        for (const [x, y] of stoke) {
-          this.drawPoint(x, y, currentColor.get())
+      let edit: Edit
+      const tool = currentTool.get()
+      if (tool === "fill") {
+        edit = {
+          color: currentColor.get(),
+          stroke: fill(x, y, dataWidth, dataHeight, this.data[x][y]),
         }
-        saveEdit(stoke, currentColor.get())
-      } else if (currentTool.get() === "eraser") {
-        this.drawPoint(x, y, [0, 0, 0, 0])
-        saveEdit([[x, y]], [0, 0, 0, 0])
+      } else if (tool === "eraser") {
+        edit = {
+          color: [0, 0, 0, 0],
+          stroke: [[x, y]],
+        }
       } else {
         // Pen tool
-        this.drawPoint(x, y, currentColor.get())
-        saveEdit([[x, y]], currentColor.get())
+        edit = {
+          color: currentColor.get(),
+          stroke: [[x, y]],
+        }
       }
+      this.drawEdit(edit)
+      saveEdit(edit)
     })
   }
 
@@ -141,12 +148,8 @@ class Board {
   }
 
   drawEdit(edit: Edit) {
-    this.drawStroke(edit.stroke, edit.color)
-  }
-
-  drawStroke(stroke: Stroke, color: Color) {
-    for (const [x, y] of stroke) {
-      this.drawPoint(x, y, color)
+    for (const [x, y] of edit.stroke) {
+      this.drawPoint(x, y, edit.color)
     }
   }
 
@@ -332,14 +335,8 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   })
 }
 
-function saveEdit(stroke: Stroke, color: Color) {
-  postMessage({
-    type: "edit",
-    edit: {
-      color,
-      stroke,
-    },
-  })
+function saveEdit(edit: Edit) {
+  postMessage({ type: "edit", edit })
 }
 
 // deno-lint-ignore no-explicit-any
