@@ -175,40 +175,31 @@ class Board {
 
   async update(dataUri: string, edits: Edit[]) {
     this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
-    await this.importImage(dataUri)
+    const img = await loadImage(dataUri)
+    await this.importImage(img)
     for (const edit of edits) {
       this.drawEdit(edit)
     }
   }
 
-  importImage(uri: string): Promise<void> {
-    const uimg = new Image()
-    uimg.src = uri
-    uimg.width = this.dataWidth
-    uimg.height = this.dataHeight
-    return new Promise<void>((resolve, reject) => {
-      uimg.onload = () => {
-        const pxc = document.createElement("canvas")
-        pxc.width = this.dataWidth
-        pxc.height = this.dataHeight
-        const pxctx = pxc.getContext("2d")!
-        pxctx.drawImage(uimg, 0, 0, this.dataWidth, this.dataHeight)
-        for (let i = 0; i < this.dataWidth; i++) {
-          for (let j = 0; j < this.dataHeight; j++) {
-            const pixel = pxctx.getImageData(i, j, 1, 1).data
-            this.drawPoint(i, j, [pixel[0], pixel[1], pixel[2], pixel[3]])
-          }
-        }
-        resolve()
+  importImage(uimg: HTMLImageElement) {
+    const pxc = document.createElement("canvas")
+    pxc.width = this.dataWidth
+    pxc.height = this.dataHeight
+    const pxctx = pxc.getContext("2d")!
+    pxctx.drawImage(uimg, 0, 0, this.dataWidth, this.dataHeight)
+    for (let i = 0; i < this.dataWidth; i++) {
+      for (let j = 0; j < this.dataHeight; j++) {
+        const pixel = pxctx.getImageData(i, j, 1, 1).data
+        this.drawPoint(i, j, [pixel[0], pixel[1], pixel[2], pixel[3]])
       }
-      uimg.onerror = (e) => reject(e)
-    })
+    }
   }
 
   static async import(uri: string, edits: Edit[]): Promise<Board> {
     const img = await loadImage(uri)
     const board = new Board(img.width, img.height)
-    await board.importImage(uri)
+    await board.importImage(img)
     for (const edit of edits) {
       board.drawEdit(edit)
     }
