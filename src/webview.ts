@@ -10,6 +10,7 @@ import type {
   Color,
   Edit,
   ExtensionMessageEvent,
+  Point,
   Stroke,
   WebviewMessage,
 } from "./types.ts"
@@ -109,28 +110,27 @@ class Board {
     )
 
     this.canvas.addEventListener("mouseup", (e) => {
+      const { dataWidth, dataHeight } = this
       const rect = this.canvas.getBoundingClientRect()
       let x = e.clientX - rect.left
       let y = e.clientY - rect.top
-      x = Math.floor(this.dataWidth * x / this.canvas.clientWidth)
-      y = Math.floor(this.dataHeight * y / this.canvas.clientHeight)
+      x = Math.floor(dataWidth * x / this.canvas.clientWidth)
+      y = Math.floor(dataHeight * y / this.canvas.clientHeight)
       if (!this.validCoords(x, y)) {
         return
       }
       if (currentTool.get() === "fill") {
-        const stoke = Array.from(
-          filler(x, y, this.dataWidth, this.dataHeight, this.data[x][y]),
-        )
+        const stoke = fill(x, y, dataWidth, dataHeight, this.data[x][y])
         for (const [x, y] of stoke) {
-          this.draw(x, y, currentColor.get())
+          this.drawPoint(x, y, currentColor.get())
         }
         saveEdit(stoke, currentColor.get())
       } else if (currentTool.get() === "eraser") {
-        this.draw(x, y, [0, 0, 0, 0])
+        this.drawPoint(x, y, [0, 0, 0, 0])
         saveEdit([[x, y]], [0, 0, 0, 0])
       } else {
         // Pen tool
-        this.draw(x, y, currentColor.get())
+        this.drawPoint(x, y, currentColor.get())
         saveEdit([[x, y]], currentColor.get())
       }
     })
@@ -140,7 +140,17 @@ class Board {
     return x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight
   }
 
-  draw(x: number, y: number, color: Color) {
+  drawEdit(edit: Edit) {
+    this.drawStroke(edit.stroke, edit.color)
+  }
+
+  drawStroke(stroke: Stroke, color: Color) {
+    for (const [x, y] of stroke) {
+      this.drawPoint(x, y, color)
+    }
+  }
+
+  drawPoint(x: number, y: number, color: Color) {
     this.data[x][y] = color
     this.ctx.clearRect(
       Math.floor(x * (this.canvasWidth / this.dataWidth)),
@@ -164,13 +174,7 @@ class Board {
     this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
     await this.importImage(dataUri)
     for (const edit of edits) {
-      this.applyEdit(edit)
-    }
-  }
-
-  applyEdit(edit: Edit) {
-    for (const [x, y] of edit.stroke) {
-      this.draw(x, y, edit.color)
+      this.drawEdit(edit)
     }
   }
 
@@ -189,7 +193,7 @@ class Board {
         for (let i = 0; i < this.dataWidth; i++) {
           for (let j = 0; j < this.dataHeight; j++) {
             const pixel = pxctx.getImageData(i, j, 1, 1).data
-            this.draw(i, j, [pixel[0], pixel[1], pixel[2], pixel[3]])
+            this.drawPoint(i, j, [pixel[0], pixel[1], pixel[2], pixel[3]])
           }
         }
         resolve()
@@ -203,7 +207,7 @@ class Board {
     const board = new Board(img.width, img.height)
     await board.importImage(uri)
     for (const edit of edits) {
-      board.applyEdit(edit)
+      board.drawEdit(edit)
     }
     return board
   }
@@ -223,6 +227,16 @@ class Board {
   }
 }
 
+function fill(
+  x: number,
+  y: number,
+  dataWidth: number,
+  dataHeight: number,
+  cc: Color,
+): Stroke {
+  return Array.from(filler(x, y, dataWidth, dataHeight, cc))
+}
+
 function* filler(
   x: number,
   y: number,
@@ -230,9 +244,8 @@ function* filler(
   dataHeight: number,
   cc: Color,
   cache: Set<string> = new Set(),
-): Generator<[number, number]> {
+): Generator<Point> {
   const key = `${x},${y}`
-  console.log(key)
   if (cache.has(key)) {
     return
   }
@@ -319,7 +332,7 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   })
 }
 
-function saveEdit(stroke: [number, number][], color: Color) {
+function saveEdit(stroke: Stroke, color: Color) {
   postMessage({
     type: "edit",
     edit: {
