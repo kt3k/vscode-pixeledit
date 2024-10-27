@@ -143,6 +143,7 @@ class Board {
   }
 
   drawPoint(x: number, y: number, color: Color) {
+    this.data[x][y] = color
     drawPoint(this.ctx, x, y, CELL_SIZE, color)
     drawPoint(this.miniCtx, x, y, 1, color)
   }
@@ -153,10 +154,10 @@ class Board {
     canvas.height = this.dataHeight
     const ctx = canvas.getContext("2d")!
     ctx.drawImage(img, 0, 0, this.dataWidth, this.dataHeight)
-    for (let i = 0; i < this.dataWidth; i++) {
-      for (let j = 0; j < this.dataHeight; j++) {
-        const { data } = ctx.getImageData(i, j, 1, 1)
-        this.drawPoint(i, j, [data[0], data[1], data[2], data[3]])
+    for (let x = 0; x < this.dataWidth; x++) {
+      for (let y = 0; y < this.dataHeight; y++) {
+        const { data } = ctx.getImageData(x, y, 1, 1)
+        this.drawPoint(x, y, [data[0], data[1], data[2], data[3]])
       }
     }
   }
@@ -209,20 +210,23 @@ function* filler(
   cache: Set<string> = new Set(),
 ): Generator<Point> {
   const key = `${x},${y}`
+  //console.log(key)
   if (cache.has(key)) {
     return
   }
+  cache.add(key)
+
   if (x < 0 || x >= dataWidth || y < 0 || y >= dataHeight) {
     return
   }
   const color = board.data[x][y]
+  console.log("color", color)
   if (
     cc[0] !== color[0] || cc[1] !== color[1] || cc[2] !== color[2] ||
     cc[3] !== color[3]
   ) {
     return
   }
-  cache.add(key)
   yield [x, y]
   yield* filler(x + 1, y, dataWidth, dataHeight, cc, cache)
   yield* filler(x, y + 1, dataWidth, dataHeight, cc, cache)
