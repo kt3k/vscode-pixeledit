@@ -63,11 +63,11 @@ export function toHex(c: Color) {
   return "#" + r + g + b
 }
 
+const CELL_SIZE = 10
+
 class Board {
   /** The canvas */
   canvas: HTMLCanvasElement
-  /** The canvas */
-  miniCanvas: HTMLCanvasElement
   /** The canvas context */
   ctx: CanvasRenderingContext2D
   /** The canvas context */
@@ -76,75 +76,63 @@ class Board {
   dataWidth: number
   /** Image data height */
   dataHeight: number
-  /** Canvas element width */
-  canvasWidth: number
-  /** Canvas element height */
-  canvasHeight: number
   /** pixel data array */
   data: Color[][]
   color: Color = [0, 0, 0, 0]
-  constructor(dataWidth: number, dataHeight: number) {
-    document.querySelector<HTMLElement>(".mini-canvas-wrapper")!.classList
-      .toggle("hidden", false)
+  constructor(img: HTMLImageElement) {
+    const dataWidth = img.width
+    const dataHeight = img.height
     this.canvas = document.querySelector("#canvas")!
-    this.miniCanvas = document.querySelector("#canvas-mini")!
-    this.canvas.width = 10 * dataWidth
-    this.canvas.height = 10 * dataHeight
-    this.miniCanvas.width = dataWidth
-    this.miniCanvas.height = dataHeight
+    const miniCanvas = document.querySelector<HTMLCanvasElement>(
+      "#canvas-mini",
+    )!
+    this.canvas.width = CELL_SIZE * dataWidth
+    this.canvas.height = CELL_SIZE * dataHeight
+    miniCanvas.width = dataWidth
+    miniCanvas.height = dataHeight
     this.dataWidth = dataWidth
     this.dataHeight = dataHeight
-    this.canvas.style.display = "block"
-    this.canvas.style.height =
-      Math.floor((dataHeight / dataWidth) * this.canvas.clientWidth) + "px"
-    this.canvasWidth = +this.canvas.width
-    this.canvasHeight = +this.canvas.height
     this.ctx = this.canvas.getContext("2d")!
-    this.miniCtx = this.miniCanvas.getContext("2d")!
-    this.ctx.fillStyle = "rgba(255,255,255,0)"
-    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
-    this.miniCtx.fillStyle = "rgba(255,255,255,0)"
-    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight)
+    this.miniCtx = miniCanvas.getContext("2d")!
+
     this.data = [...Array(this.dataWidth)].map((_e) =>
       Array(this.dataHeight).fill([255, 255, 255, 0])
     )
-
-    this.canvas.addEventListener("mouseup", (e) => {
-      const { dataWidth, dataHeight } = this
-      const rect = this.canvas.getBoundingClientRect()
-      let x = e.clientX - rect.left
-      let y = e.clientY - rect.top
-      x = Math.floor(dataWidth * x / this.canvas.clientWidth)
-      y = Math.floor(dataHeight * y / this.canvas.clientHeight)
-      if (!this.validCoords(x, y)) {
-        return
-      }
-      let edit: Edit
-      const tool = currentTool.get()
-      if (tool === "fill") {
-        edit = {
-          color: currentColor.get(),
-          stroke: fill(x, y, dataWidth, dataHeight, this.data[x][y]),
-        }
-      } else if (tool === "eraser") {
-        edit = {
-          color: [0, 0, 0, 0],
-          stroke: [[x, y]],
-        }
-      } else {
-        // Pen tool
-        edit = {
-          color: currentColor.get(),
-          stroke: [[x, y]],
-        }
-      }
-      this.drawEdit(edit)
-      saveEdit(edit)
-    })
+    this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e))
+    this.importImage(img)
   }
 
-  validCoords(x: number, y: number) {
-    return x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight
+  onMouseUp(e: MouseEvent) {
+    const { dataWidth, dataHeight } = this
+    const rect = this.canvas.getBoundingClientRect()
+    let x = e.clientX - rect.left
+    let y = e.clientY - rect.top
+    x = Math.floor(dataWidth * x / this.canvas.clientWidth)
+    y = Math.floor(dataHeight * y / this.canvas.clientHeight)
+    if (!(x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight)) {
+      return
+    }
+    let edit: Edit
+    const tool = currentTool.get()
+    if (tool === "fill") {
+      edit = {
+        color: currentColor.get(),
+        stroke: fill(x, y, dataWidth, dataHeight, this.data[x][y]),
+      }
+    } else if (tool === "eraser") {
+      edit = {
+        color: [0, 0, 0, 0],
+        stroke: [[x, y]],
+      }
+    } else {
+      // Pen tool
+      edit = {
+        color: currentColor.get(),
+        stroke: [[x, y]],
+      }
+    }
+    this.drawEdit(edit)
+    postMessage({ type: "edit", edit })
   }
 
   drawEdit(edit: Edit) {
@@ -155,70 +143,51 @@ class Board {
 
   drawPoint(x: number, y: number, color: Color) {
     this.data[x][y] = color
-    this.ctx.clearRect(
-      Math.floor(x * (this.canvasWidth / this.dataWidth)),
-      Math.floor(y * (this.canvasHeight / this.dataHeight)),
-      Math.floor(this.canvasWidth / this.dataWidth),
-      Math.floor(this.canvasHeight / this.dataHeight),
-    )
+    this.ctx.clearRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
     this.ctx.fillStyle = toCssColor(color)
-    this.ctx.fillRect(
-      Math.floor(x * (this.canvasWidth / this.dataWidth)),
-      Math.floor(y * (this.canvasHeight / this.dataHeight)),
-      Math.floor(this.canvasWidth / this.dataWidth),
-      Math.floor(this.canvasHeight / this.dataHeight),
-    )
+    this.ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
     this.miniCtx.clearRect(x, y, 1, 1)
     this.miniCtx.fillStyle = toCssColor(color)
     this.miniCtx.fillRect(x, y, 1, 1)
   }
 
   async update(dataUri: string, edits: Edit[]) {
-    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
     const img = await loadImage(dataUri)
-    await this.importImage(img)
+    this.importImage(img)
     for (const edit of edits) {
       this.drawEdit(edit)
     }
   }
 
-  importImage(uimg: HTMLImageElement) {
-    const pxc = document.createElement("canvas")
-    pxc.width = this.dataWidth
-    pxc.height = this.dataHeight
-    const pxctx = pxc.getContext("2d")!
-    pxctx.drawImage(uimg, 0, 0, this.dataWidth, this.dataHeight)
-    for (let i = 0; i < this.dataWidth; i++) {
-      for (let j = 0; j < this.dataHeight; j++) {
-        const pixel = pxctx.getImageData(i, j, 1, 1).data
-        this.drawPoint(i, j, [pixel[0], pixel[1], pixel[2], pixel[3]])
-      }
-    }
-  }
-
-  static async import(uri: string, edits: Edit[]): Promise<Board> {
-    const img = await loadImage(uri)
-    const board = new Board(img.width, img.height)
-    await board.importImage(img)
-    for (const edit of edits) {
-      board.drawEdit(edit)
-    }
-    return board
-  }
-
-  exportImage() {
+  importImage(img: HTMLImageElement) {
     const canvas = document.createElement("canvas")
     canvas.width = this.dataWidth
     canvas.height = this.dataHeight
     const ctx = canvas.getContext("2d")!
-    this.data.forEach((row, i) => {
-      row.forEach((color, j) => {
-        ctx.fillStyle = toCssColor(color)
-        ctx.fillRect(i, j, 1, 1)
-      })
-    })
-    return canvas.toDataURL("image/png")
+    ctx.drawImage(img, 0, 0, this.dataWidth, this.dataHeight)
+    for (let i = 0; i < this.dataWidth; i++) {
+      for (let j = 0; j < this.dataHeight; j++) {
+        const { data } = ctx.getImageData(i, j, 1, 1)
+        this.drawPoint(i, j, [data[0], data[1], data[2], data[3]])
+      }
+    }
   }
+}
+
+function exportImage(data: Color[][]) {
+  const dataWidth = data.length
+  const dataHeight = data[0].length
+  const canvas = document.createElement("canvas")
+  canvas.width = dataWidth
+  canvas.height = dataHeight
+  const ctx = canvas.getContext("2d")!
+  data.forEach((row, i) => {
+    row.forEach((color, j) => {
+      ctx.fillStyle = toCssColor(color)
+      ctx.fillRect(i, j, 1, 1)
+    })
+  })
+  return canvas.toDataURL("image/png")
 }
 
 function fill(
@@ -326,10 +295,6 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   })
 }
 
-function saveEdit(edit: Edit) {
-  postMessage({ type: "edit", edit })
-}
-
 // deno-lint-ignore no-explicit-any
 export const vscode: any = typeof Deno === "object"
   ? { postMessage: () => {} }
@@ -341,14 +306,18 @@ function postMessage(message: WebviewMessage) {
 const onMessage = async ({ data }: ExtensionMessageEvent) => {
   const { type } = data
   if (type === "init") {
-    board = await Board.import(data.dataUri, data.edits)
+    const img = await loadImage(data.dataUri)
+    board = new Board(img)
+    for (const edit of data.edits) {
+      board.drawEdit(edit)
+    }
   } else if (type === "new") {
     // TODO: Implement new
   } else if (type === "getBytes") {
     postMessage({
       type: "response",
       requestId: data.requestId,
-      body: board.exportImage(),
+      body: exportImage(board.data),
     })
   } else if (type === "update") {
     board.update(data.doc.dataUri, data.doc.edits)

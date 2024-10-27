@@ -9,7 +9,6 @@
   transform: translate(-50%, -50%);
   width: 75%;
   max-width: 550px;
-  display: none;
   cursor: crosshair;
   touch-action: none;
   image-rendering: -moz-crisp-edges;
