@@ -51,6 +51,7 @@ const paletteColors = new Signal<Color[]>([
   [200, 191, 231, 255],
 ])
 const currentColor = new Signal<Color>([0, 0, 0, 255])
+const imageData = new Signal<Color[][]>([])
 
 export function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -142,21 +143,8 @@ class Board {
   }
 
   drawPoint(x: number, y: number, color: Color) {
-    this.data[x][y] = color
-    this.ctx.clearRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-    this.ctx.fillStyle = toCssColor(color)
-    this.ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-    this.miniCtx.clearRect(x, y, 1, 1)
-    this.miniCtx.fillStyle = toCssColor(color)
-    this.miniCtx.fillRect(x, y, 1, 1)
-  }
-
-  async update(dataUri: string, edits: Edit[]) {
-    const img = await loadImage(dataUri)
-    this.importImage(img)
-    for (const edit of edits) {
-      this.drawEdit(edit)
-    }
+    drawPoint(this.ctx, x, y, CELL_SIZE, color)
+    drawPoint(this.miniCtx, x, y, 1, color)
   }
 
   importImage(img: HTMLImageElement) {
@@ -188,6 +176,18 @@ function exportImage(data: Color[][]) {
     })
   })
   return canvas.toDataURL("image/png")
+}
+
+function drawPoint(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  color: Color,
+) {
+  ctx.clearRect(x * size, y * size, size, size)
+  ctx.fillStyle = toCssColor(color)
+  ctx.fillRect(x * size, y * size, size, size)
 }
 
 function fill(
@@ -320,10 +320,15 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
       body: exportImage(board.data),
     })
   } else if (type === "update") {
-    board.update(data.doc.dataUri, data.doc.edits)
+    const img = await loadImage(data.doc.dataUri)
+    board.importImage(img)
+    for (const edit of data.doc.edits) {
+      board.drawEdit(edit)
+    }
   }
 }
 globalThis.addEventListener("message", onMessage)
+
 register(Palette, "js-palette")
 register(Tools, "js-tools")
 postMessage({ type: "ready" })
