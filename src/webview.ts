@@ -25,6 +25,11 @@ const toolBtns: ToolBtn[] = [
   { tool: "eraser", label: "消" },
   { tool: "fill", label: "塗" },
 ]
+const currentColor = new Signal<Color>([0, 0, 0, 255])
+type Data = Color[][]
+const baseData = new Signal<Data>([])
+let currentDataCache: Data = []
+const currentEdit = new Signal<Edit>({ color: [0, 0, 0, 0], stroke: [] })
 
 const paletteColors = new Signal<Color[]>([
   [0, 0, 0, 255],
@@ -50,9 +55,6 @@ const paletteColors = new Signal<Color[]>([
   [112, 146, 190, 255],
   [200, 191, 231, 255],
 ])
-const currentColor = new Signal<Color>([0, 0, 0, 255])
-const imageData = new Signal<Color[][]>([])
-const currentEdit = new Signal<Edit>({ color: [0, 0, 0, 0], stroke: [] })
 
 export function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
@@ -78,9 +80,6 @@ class Board {
   dataWidth: number
   /** Image data height */
   dataHeight: number
-  /** pixel data array */
-  data: Color[][]
-  color: Color = [0, 0, 0, 0]
   constructor(img: HTMLImageElement) {
     const dataWidth = img.width
     const dataHeight = img.height
@@ -97,7 +96,7 @@ class Board {
     this.ctx = this.canvas.getContext("2d")!
     this.miniCtx = miniCanvas.getContext("2d")!
 
-    this.data = [...Array(this.dataWidth)].map((_e) =>
+    currentDataCache = [...Array(this.dataWidth)].map((_e) =>
       Array(this.dataHeight).fill([255, 255, 255, 0])
     )
     this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e))
@@ -119,7 +118,7 @@ class Board {
     if (tool === "fill") {
       edit = {
         color: currentColor.get(),
-        stroke: fill(x, y, dataWidth, dataHeight, this.data[x][y]),
+        stroke: fill(x, y, dataWidth, dataHeight, currentDataCache[x][y]),
       }
     } else if (tool === "eraser") {
       edit = {
@@ -144,7 +143,7 @@ class Board {
   }
 
   drawPoint(x: number, y: number, color: Color) {
-    this.data[x][y] = color
+    currentDataCache[x][y] = color
     drawPoint(this.ctx, x, y, CELL_SIZE, color)
     drawPoint(this.miniCtx, x, y, 1, color)
   }
@@ -220,7 +219,7 @@ function* filler(
   if (x < 0 || x >= dataWidth || y < 0 || y >= dataHeight) {
     return
   }
-  const color = board.data[x][y]
+  const color = currentDataCache[x][y]
   console.log("color", color)
   if (
     cc[0] !== color[0] || cc[1] !== color[1] || cc[2] !== color[2] ||
@@ -322,7 +321,7 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     postMessage({
       type: "response",
       requestId: data.requestId,
-      body: exportImage(board.data),
+      body: exportImage(currentDataCache),
     })
   } else if (type === "update") {
     const img = await loadImage(data.doc.dataUri)
