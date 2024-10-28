@@ -52,6 +52,7 @@ const paletteColors = new Signal<Color[]>([
 ])
 const currentColor = new Signal<Color>([0, 0, 0, 255])
 const imageData = new Signal<Color[][]>([])
+const currentEdit = new Signal<Edit>({ color: [0, 0, 0, 0], stroke: [] })
 
 export function toCssColor(c: Color) {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`
