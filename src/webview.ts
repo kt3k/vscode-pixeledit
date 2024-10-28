@@ -30,6 +30,7 @@ type Data = Color[][]
 const baseData = new Signal<Data>([])
 let currentDataCache: Data = []
 const currentEdit = new Signal<Edit>({ color: [0, 0, 0, 0], stroke: [] })
+const TRANSPARENT = [0, 0, 0, 0] as const
 
 const paletteColors = new Signal<Color[]>([
   [0, 0, 0, 255],
@@ -76,41 +77,35 @@ class Board {
   ctx: CanvasRenderingContext2D
   /** The canvas context */
   miniCtx: CanvasRenderingContext2D
-  /** Image data width */
-  dataWidth: number
-  /** Image data height */
-  dataHeight: number
+  /** Image */
+  img: HTMLImageElement
   constructor(img: HTMLImageElement) {
-    const dataWidth = img.width
-    const dataHeight = img.height
+    const { width, height } = img
+    this.img = img
     this.canvas = document.querySelector("#canvas")!
     const miniCanvas = document.querySelector<HTMLCanvasElement>(
       "#canvas-mini",
     )!
-    this.canvas.width = CELL_SIZE * dataWidth
-    this.canvas.height = CELL_SIZE * dataHeight
-    miniCanvas.width = dataWidth
-    miniCanvas.height = dataHeight
-    this.dataWidth = dataWidth
-    this.dataHeight = dataHeight
+    this.canvas.width = CELL_SIZE * width
+    this.canvas.height = CELL_SIZE * height
+    miniCanvas.width = width
+    miniCanvas.height = height
     this.ctx = this.canvas.getContext("2d")!
     this.miniCtx = miniCanvas.getContext("2d")!
 
-    currentDataCache = [...Array(this.dataWidth)].map((_e) =>
-      Array(this.dataHeight).fill([255, 255, 255, 0])
-    )
+    currentDataCache = createEmptyData(width, height)
     this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e))
     this.importImage(img)
   }
 
   onMouseUp(e: MouseEvent) {
-    const { dataWidth, dataHeight } = this
+    const { width, height } = this.img
     const rect = this.canvas.getBoundingClientRect()
     let x = e.clientX - rect.left
     let y = e.clientY - rect.top
-    x = Math.floor(dataWidth * x / this.canvas.clientWidth)
-    y = Math.floor(dataHeight * y / this.canvas.clientHeight)
-    if (!(x >= 0 && x < this.dataWidth && y >= 0 && y < this.dataHeight)) {
+    x = Math.floor(width * x / this.canvas.clientWidth)
+    y = Math.floor(height * y / this.canvas.clientHeight)
+    if (!(x >= 0 && x < width && y >= 0 && y < height)) {
       return
     }
     let edit: Edit
@@ -118,11 +113,11 @@ class Board {
     if (tool === "fill") {
       edit = {
         color: currentColor.get(),
-        stroke: fill(x, y, dataWidth, dataHeight, currentDataCache[x][y]),
+        stroke: fill(x, y, width, height, currentDataCache[x][y]),
       }
     } else if (tool === "eraser") {
       edit = {
-        color: [0, 0, 0, 0],
+        color: TRANSPARENT,
         stroke: [[x, y]],
       }
     } else {
@@ -149,18 +144,23 @@ class Board {
   }
 
   importImage(img: HTMLImageElement) {
+    const { width, height } = this.img
     const canvas = document.createElement("canvas")
-    canvas.width = this.dataWidth
-    canvas.height = this.dataHeight
+    canvas.width = width
+    canvas.height = height
     const ctx = canvas.getContext("2d")!
-    ctx.drawImage(img, 0, 0, this.dataWidth, this.dataHeight)
-    for (let x = 0; x < this.dataWidth; x++) {
-      for (let y = 0; y < this.dataHeight; y++) {
+    ctx.drawImage(img, 0, 0, width, height)
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
         const { data } = ctx.getImageData(x, y, 1, 1)
         this.drawPoint(x, y, [data[0], data[1], data[2], data[3]])
       }
     }
   }
+}
+
+function createEmptyData(width: number, height: number) {
+  return [...Array(width)].map((_e) => Array(height).fill(TRANSPARENT))
 }
 
 function exportImage(data: Color[][]) {
