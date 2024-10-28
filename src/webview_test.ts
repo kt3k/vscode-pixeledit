@@ -2,7 +2,7 @@
 /// <reference lib="deno.ns" />
 
 import { assertEquals } from "@std/assert"
-import { toCssColor, toHex } from "./webview.ts"
+import { range, toCssColor, toHex } from "./webview.ts"
 import { DOMParser } from "@b-fuze/deno-dom"
 import { mount } from "@kt3k/cell"
 import { assertSnapshot } from "@std/testing/snapshot"
@@ -35,4 +35,8 @@ Deno.test("js-palette", async (t) => {
   )
   mount()
   await assertSnapshot(t, document.querySelector(".js-palette")?.innerHTML)
+})
+
+Deno.test("range", () => {
+  assertEquals([...range(3)], [0, 1, 2])
 })

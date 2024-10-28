@@ -68,6 +68,12 @@ export function toHex(c: Color) {
   return "#" + r + g + b
 }
 
+export function* range(n: number) {
+  for (let i = 0; i < n; i++) {
+    yield i
+  }
+}
+
 const CELL_SIZE = 10
 
 class Board {
@@ -101,10 +107,12 @@ class Board {
   onMouseUp(e: MouseEvent) {
     const { width, height } = this.img
     const rect = this.canvas.getBoundingClientRect()
-    let x = e.clientX - rect.left
-    let y = e.clientY - rect.top
-    x = Math.floor(width * x / this.canvas.clientWidth)
-    y = Math.floor(height * y / this.canvas.clientHeight)
+    const x = Math.floor(
+      width * (e.clientX - rect.left) / this.canvas.clientWidth,
+    )
+    const y = Math.floor(
+      height * (e.clientY - rect.top) / this.canvas.clientHeight,
+    )
     if (!(x >= 0 && x < width && y >= 0 && y < height)) {
       return
     }
@@ -128,6 +136,7 @@ class Board {
       }
     }
     this.drawEdit(edit)
+    currentEdit.update(edit)
     postMessage({ type: "edit", edit })
   }
 
@@ -149,13 +158,16 @@ class Board {
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext("2d")!
+    const data: Data = createEmptyData(width, height)
     ctx.drawImage(img, 0, 0, width, height)
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        const { data } = ctx.getImageData(x, y, 1, 1)
-        this.drawPoint(x, y, [data[0], data[1], data[2], data[3]])
+    for (const x of range(width)) {
+      for (const y of range(height)) {
+        const { data: d } = ctx.getImageData(x, y, 1, 1)
+        this.drawPoint(x, y, [d[0], d[1], d[2], d[3]])
+        data[x][y] = [d[0], d[1], d[2], d[3]]
       }
     }
+    baseData.update(data)
   }
 }
 
@@ -210,7 +222,6 @@ function* filler(
   cache: Set<string> = new Set(),
 ): Generator<Point> {
   const key = `${x},${y}`
-  //console.log(key)
   if (cache.has(key)) {
     return
   }
@@ -220,7 +231,6 @@ function* filler(
     return
   }
   const color = currentDataCache[x][y]
-  console.log("color", color)
   if (
     cc[0] !== color[0] || cc[1] !== color[1] || cc[2] !== color[2] ||
     cc[3] !== color[3]
