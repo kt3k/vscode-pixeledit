@@ -141,15 +141,9 @@ class Board {
   }
 
   drawEdit(edit: Edit) {
-    for (const [x, y] of edit.stroke) {
-      this.drawPoint(x, y, edit.color)
-    }
-  }
-
-  drawPoint(x: number, y: number, color: Color) {
-    currentDataCache[x][y] = color
-    drawPoint(this.ctx, x, y, CELL_SIZE, color)
-    drawPoint(this.miniCtx, x, y, 1, color)
+    drawEdit(this.ctx, edit, CELL_SIZE)
+    drawEdit(this.miniCtx, edit, 1)
+    currentDataCache = mergeEdit(currentDataCache, edit)
   }
 
   importImage(img: HTMLImageElement) {
@@ -163,11 +157,13 @@ class Board {
     for (const x of range(width)) {
       for (const y of range(height)) {
         const { data: d } = ctx.getImageData(x, y, 1, 1)
-        this.drawPoint(x, y, [d[0], d[1], d[2], d[3]])
         data[x][y] = [d[0], d[1], d[2], d[3]]
       }
     }
     baseData.update(data)
+    currentDataCache = data
+    drawData(this.ctx, data, CELL_SIZE)
+    drawData(this.miniCtx, data, 1)
   }
 }
 
@@ -175,7 +171,7 @@ function createEmptyData(width: number, height: number) {
   return [...Array(width)].map((_e) => Array(height).fill(TRANSPARENT))
 }
 
-function exportImage(data: Color[][]) {
+function exportImage(data: Data) {
   const dataWidth = data.length
   const dataHeight = data[0].length
   const canvas = document.createElement("canvas")
@@ -189,6 +185,28 @@ function exportImage(data: Color[][]) {
     })
   })
   return canvas.toDataURL("image/png")
+}
+
+function drawEdit(ctx: CanvasRenderingContext2D, edit: Edit, size: number) {
+  for (const [x, y] of edit.stroke) {
+    drawPoint(ctx, x, y, size, edit.color)
+  }
+}
+
+function drawData(ctx: CanvasRenderingContext2D, data: Data, size: number) {
+  data.forEach((row, x) => {
+    row.forEach((color, y) => {
+      drawPoint(ctx, x, y, size, color)
+    })
+  })
+}
+
+function mergeEdit(data: Data, edit: Edit) {
+  const newData = data.map((row) => [...row])
+  for (const [x, y] of edit.stroke) {
+    newData[x][y] = edit.color
+  }
+  return newData
 }
 
 function drawPoint(
