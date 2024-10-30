@@ -30,7 +30,9 @@ let currentDataCache: Data = []
 const currentEdit = new Signal<Edit>({ color: [0, 0, 0, 0], stroke: [] })
 const TRANSPARENT = [0, 0, 0, 0] as const
 currentEdit.subscribe((edit) => {
-  currentDataCache = mergeEdit(currentDataCache, edit)
+  for (const [x, y] of edit.stroke) {
+    currentDataCache[x][y] = edit.color
+  }
 })
 baseData.subscribe((data) => {
   currentDataCache = data
@@ -80,12 +82,12 @@ export function* range(n: number) {
 
 const CELL_SIZE = 10
 
-function Canvas({ el: canvas, on }: Context<HTMLCanvasElement>) {
+function Canvas({ el: canvas, on, subscribe }: Context<HTMLCanvasElement>) {
   const ctx = canvas.getContext("2d")!
   let width = 0
   let height = 0
 
-  baseData.subscribe((data) => {
+  subscribe(baseData, (data) => {
     width = data.length
     height = data[0]?.length || 0
     canvas.width = width * CELL_SIZE
@@ -93,7 +95,7 @@ function Canvas({ el: canvas, on }: Context<HTMLCanvasElement>) {
     drawData(ctx, data, CELL_SIZE)
   })
 
-  currentEdit.subscribe((edit) => {
+  subscribe(currentEdit, (edit) => {
     drawEdit(ctx, edit, CELL_SIZE)
   })
 
@@ -175,14 +177,6 @@ function drawData(ctx: CanvasRenderingContext2D, data: Data, size: number) {
       drawPoint(ctx, x, y, size, color)
     })
   })
-}
-
-function mergeEdit(data: Data, edit: Edit) {
-  const newData = data.map((row) => [...row])
-  for (const [x, y] of edit.stroke) {
-    newData[x][y] = edit.color
-  }
-  return newData
 }
 
 function drawPoint(
