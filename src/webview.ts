@@ -34,6 +34,9 @@ const TRANSPARENT = [0, 0, 0, 0] as const
 currentEdit.subscribe((edit) => {
   currentDataCache = mergeEdit(currentDataCache, edit)
 })
+baseData.subscribe((data) => {
+  currentDataCache = data
+})
 
 const paletteColors = new Signal<Color[]>([
   [0, 0, 0, 255],
@@ -84,23 +87,30 @@ class Board {
   canvas: HTMLCanvasElement
   /** The canvas context */
   ctx: CanvasRenderingContext2D
-  /** Image */
-  img: HTMLImageElement
-  constructor(img: HTMLImageElement) {
-    const { width, height } = img
-    this.img = img
+  /** The width */
+  width = 0
+  /** The height */
+  height = 0
+  constructor() {
     this.canvas = document.querySelector("#canvas")!
-    this.canvas.width = CELL_SIZE * width
-    this.canvas.height = CELL_SIZE * height
     this.ctx = this.canvas.getContext("2d")!
 
-    currentDataCache = createEmptyData(width, height)
     this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e))
-    this.importImage(img)
+
+    baseData.subscribe((data) => {
+      this.width = data.length
+      this.height = data[0]?.length || 0
+      this.canvas.width = this.width * CELL_SIZE
+      this.canvas.height = this.height * CELL_SIZE
+      drawData(this.ctx, data, CELL_SIZE)
+    })
+    currentEdit.subscribe((edit) => {
+      drawEdit(this.ctx, edit, CELL_SIZE)
+    })
   }
 
   onMouseUp(e: MouseEvent) {
-    const { width, height } = this.img
+    const { width, height } = this
     const rect = this.canvas.getBoundingClientRect()
     const x = Math.floor(
       width * (e.clientX - rect.left) / this.canvas.clientWidth,
@@ -130,33 +140,28 @@ class Board {
         stroke: [[x, y]],
       }
     }
-    drawEdit(this.ctx, edit, CELL_SIZE)
     currentEdit.update(edit)
     postMessage({ type: "edit", edit })
   }
-
-  importImage(img: HTMLImageElement) {
-    const { width, height } = this.img
-    const canvas = document.createElement("canvas")
-    canvas.width = width
-    canvas.height = height
-    const ctx = canvas.getContext("2d")!
-    const data: Data = createEmptyData(width, height)
-    ctx.drawImage(img, 0, 0, width, height)
-    for (const x of range(width)) {
-      for (const y of range(height)) {
-        const { data: d } = ctx.getImageData(x, y, 1, 1)
-        data[x][y] = [d[0], d[1], d[2], d[3]]
-      }
-    }
-    baseData.update(data)
-    currentDataCache = data
-    drawData(this.ctx, data, CELL_SIZE)
-  }
 }
 
-function createEmptyData(width: number, height: number) {
-  return [...Array(width)].map((_e) => Array(height).fill(TRANSPARENT))
+function importImage(img: HTMLImageElement) {
+  const { width, height } = img
+  const canvas = document.createElement("canvas")
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext("2d")!
+  const data: Data = [...Array(width)].map((_e) =>
+    Array(height).fill(TRANSPARENT)
+  )
+  ctx.drawImage(img, 0, 0, width, height)
+  for (const x of range(width)) {
+    for (const y of range(height)) {
+      const { data: d } = ctx.getImageData(x, y, 1, 1)
+      data[x][y] = [d[0], d[1], d[2], d[3]]
+    }
+  }
+  baseData.update(data)
 }
 
 function exportImage(data: Data) {
@@ -339,7 +344,8 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
   const { type } = data
   if (type === "init") {
     const img = await loadImage(data.dataUri)
-    board = new Board(img)
+    board = new Board()
+    importImage(img)
     for (const edit of data.edits) {
       drawEdit(board.ctx, edit, CELL_SIZE)
       currentEdit.update(edit)
@@ -354,7 +360,7 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     })
   } else if (type === "update") {
     const img = await loadImage(data.doc.dataUri)
-    board.importImage(img)
+    importImage(img)
     for (const edit of data.doc.edits) {
       drawEdit(board.ctx, edit, CELL_SIZE)
       currentEdit.update(edit)
