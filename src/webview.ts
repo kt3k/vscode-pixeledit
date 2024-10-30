@@ -15,8 +15,6 @@ import type {
   WebviewMessage,
 } from "./types.ts"
 
-let board: Board
-
 type Tool = "pen" | "eraser" | "fill"
 const currentTool = new Signal<Tool>("pen")
 type ToolBtn = { tool: Tool; label: string }
@@ -82,42 +80,27 @@ export function* range(n: number) {
 
 const CELL_SIZE = 10
 
-class Board {
-  /** The canvas */
-  canvas: HTMLCanvasElement
-  /** The canvas context */
-  ctx: CanvasRenderingContext2D
-  /** The width */
-  width = 0
-  /** The height */
-  height = 0
-  constructor() {
-    this.canvas = document.querySelector("#canvas")!
-    this.ctx = this.canvas.getContext("2d")!
+function Canvas({ el: canvas, on }: Context<HTMLCanvasElement>) {
+  const ctx = canvas.getContext("2d")!
+  let width = 0
+  let height = 0
 
-    this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e))
+  baseData.subscribe((data) => {
+    width = data.length
+    height = data[0]?.length || 0
+    canvas.width = width * CELL_SIZE
+    canvas.height = height * CELL_SIZE
+    drawData(ctx, data, CELL_SIZE)
+  })
 
-    baseData.subscribe((data) => {
-      this.width = data.length
-      this.height = data[0]?.length || 0
-      this.canvas.width = this.width * CELL_SIZE
-      this.canvas.height = this.height * CELL_SIZE
-      drawData(this.ctx, data, CELL_SIZE)
-    })
-    currentEdit.subscribe((edit) => {
-      drawEdit(this.ctx, edit, CELL_SIZE)
-    })
-  }
+  currentEdit.subscribe((edit) => {
+    drawEdit(ctx, edit, CELL_SIZE)
+  })
 
-  onMouseUp(e: MouseEvent) {
-    const { width, height } = this
-    const rect = this.canvas.getBoundingClientRect()
-    const x = Math.floor(
-      width * (e.clientX - rect.left) / this.canvas.clientWidth,
-    )
-    const y = Math.floor(
-      height * (e.clientY - rect.top) / this.canvas.clientHeight,
-    )
+  on("mouseup", (e) => {
+    const rect = canvas.getBoundingClientRect()
+    const x = Math.floor(width * (e.clientX - rect.left) / canvas.clientWidth)
+    const y = Math.floor(height * (e.clientY - rect.top) / canvas.clientHeight)
     if (!(x >= 0 && x < width && y >= 0 && y < height)) {
       return
     }
@@ -142,7 +125,7 @@ class Board {
     }
     currentEdit.update(edit)
     postMessage({ type: "edit", edit })
-  }
+  })
 }
 
 function importImage(img: HTMLImageElement) {
@@ -344,10 +327,8 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
   const { type } = data
   if (type === "init") {
     const img = await loadImage(data.dataUri)
-    board = new Board()
     importImage(img)
     for (const edit of data.edits) {
-      drawEdit(board.ctx, edit, CELL_SIZE)
       currentEdit.update(edit)
     }
   } else if (type === "new") {
@@ -362,7 +343,6 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     const img = await loadImage(data.doc.dataUri)
     importImage(img)
     for (const edit of data.doc.edits) {
-      drawEdit(board.ctx, edit, CELL_SIZE)
       currentEdit.update(edit)
     }
   }
@@ -372,4 +352,5 @@ globalThis.addEventListener("message", onMessage)
 register(Palette, "js-palette")
 register(Tools, "js-tools")
 register(MiniCanvas, "js-mini-canvas")
+register(Canvas, "js-canvas")
 postMessage({ type: "ready" })
