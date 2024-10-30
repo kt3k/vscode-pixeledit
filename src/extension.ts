@@ -128,12 +128,10 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     // Setup initial content for the webview
     webview.options = { enableScripts: true }
     const scriptUri = Uri.joinPath(this.uri, "out/webview.js")
-    const styleUri = Uri.joinPath(this.uri, "out/style.css")
     const tailwindUri = Uri.joinPath(this.uri, "out/tailwind.css")
     const html = await this.#html
     webview.html = html
       .replace("${scriptUri}", webview.asWebviewUri(scriptUri).toString())
-      .replace("${styleUri}", webview.asWebviewUri(styleUri).toString())
       .replace("${tailwindUri}", webview.asWebviewUri(tailwindUri).toString())
 
     webview.onDidReceiveMessage((e: WebviewMessage) => {
