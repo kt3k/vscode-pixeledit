@@ -1,5 +1,4 @@
 // Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
-// Copyright 2021 PixelCraft. All rights reserved. MIT license.
 
 /// <reference lib="dom" />
 /// <reference path="../node_modules/@types/vscode-webview/index.d.ts" />
