@@ -31,6 +31,9 @@ const baseData = new Signal<Data>([])
 let currentDataCache: Data = []
 const currentEdit = new Signal<Edit>({ color: [0, 0, 0, 0], stroke: [] })
 const TRANSPARENT = [0, 0, 0, 0] as const
+currentEdit.subscribe((edit) => {
+  currentDataCache = mergeEdit(currentDataCache, edit)
+})
 
 const paletteColors = new Signal<Color[]>([
   [0, 0, 0, 255],
@@ -81,23 +84,15 @@ class Board {
   canvas: HTMLCanvasElement
   /** The canvas context */
   ctx: CanvasRenderingContext2D
-  /** The canvas context */
-  miniCtx: CanvasRenderingContext2D
   /** Image */
   img: HTMLImageElement
   constructor(img: HTMLImageElement) {
     const { width, height } = img
     this.img = img
     this.canvas = document.querySelector("#canvas")!
-    const miniCanvas = document.querySelector<HTMLCanvasElement>(
-      "#canvas-mini",
-    )!
     this.canvas.width = CELL_SIZE * width
     this.canvas.height = CELL_SIZE * height
-    miniCanvas.width = width
-    miniCanvas.height = height
     this.ctx = this.canvas.getContext("2d")!
-    this.miniCtx = miniCanvas.getContext("2d")!
 
     currentDataCache = createEmptyData(width, height)
     this.canvas.addEventListener("mouseup", (e) => this.onMouseUp(e))
@@ -135,15 +130,9 @@ class Board {
         stroke: [[x, y]],
       }
     }
-    this.drawEdit(edit)
+    drawEdit(this.ctx, edit, CELL_SIZE)
     currentEdit.update(edit)
     postMessage({ type: "edit", edit })
-  }
-
-  drawEdit(edit: Edit) {
-    drawEdit(this.ctx, edit, CELL_SIZE)
-    drawEdit(this.miniCtx, edit, 1)
-    currentDataCache = mergeEdit(currentDataCache, edit)
   }
 
   importImage(img: HTMLImageElement) {
@@ -163,7 +152,6 @@ class Board {
     baseData.update(data)
     currentDataCache = data
     drawData(this.ctx, data, CELL_SIZE)
-    drawData(this.miniCtx, data, 1)
   }
 }
 
@@ -271,6 +259,18 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
+function MiniCanvas({ el: canvas, subscribe }: Context<HTMLCanvasElement>) {
+  const ctx = canvas.getContext("2d")!
+  subscribe(baseData, (data) => {
+    canvas.width = data.length
+    canvas.height = data[0]?.length || 0
+    drawData(ctx, data, 1)
+  })
+  subscribe(currentEdit, (edit) => {
+    drawEdit(ctx, edit, 1)
+  })
+}
+
 /** Tools UI component */
 function Tools({ el, on, queryAll, subscribe }: Context) {
   on("click", ".item", ({ target }) => {
@@ -341,7 +341,8 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     const img = await loadImage(data.dataUri)
     board = new Board(img)
     for (const edit of data.edits) {
-      board.drawEdit(edit)
+      drawEdit(board.ctx, edit, CELL_SIZE)
+      currentEdit.update(edit)
     }
   } else if (type === "new") {
     // TODO: Implement new
@@ -355,7 +356,8 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     const img = await loadImage(data.doc.dataUri)
     board.importImage(img)
     for (const edit of data.doc.edits) {
-      board.drawEdit(edit)
+      drawEdit(board.ctx, edit, CELL_SIZE)
+      currentEdit.update(edit)
     }
   }
 }
@@ -363,4 +365,5 @@ globalThis.addEventListener("message", onMessage)
 
 register(Palette, "js-palette")
 register(Tools, "js-tools")
+register(MiniCanvas, "js-mini-canvas")
 postMessage({ type: "ready" })
