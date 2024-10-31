@@ -10,17 +10,17 @@
     </style>
   </head>
   <body>
-    <div>
-      <div class="flex items-center justify-center mt-4">
-        <span class="bg-gray-500 rounded-full p-4">
-          <canvas class="js-mini-canvas crisp-edges"></canvas>
-        </span>
-      </div>
+    <div class="flex items-center justify-center mt-4">
+      <span class="bg-gray-500 rounded-full p-4">
+        <canvas class="js-mini-canvas crisp-edges"></canvas>
+      </span>
+    </div>
+    <div class="mt-4 flex items-start justify-between">
+      <div class="js-tools grid grid-cols-2"></div>
       <canvas
-        class="js-canvas block shadow-lg fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3/4 max-w-[550px] cursor-crosshair crisp-edges bg-gray-500"
+        class="js-canvas block shadow-lg w-3/4 max-w-[550px] cursor-crosshair crisp-edges bg-gray-500"
       ></canvas>
-      <div class="js-tools fixed left-0 grid grid-cols-2"></div>
-      <div class="js-palette fixed right-0 top-0 w-24 grid grid-cols-2"></div>
+      <div class="js-palette w-24 grid grid-cols-2"></div>
     </div>
   </body>
   <script src="${scriptUri}" type="module"></script>

@@ -135,11 +135,11 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
       .replace("${tailwindUri}", webview.asWebviewUri(tailwindUri).toString())
 
     webview.onDidReceiveMessage((e: WebviewMessage) => {
-      this.#handleWebviewMessage(doc, e)
+      this.#onMessage(doc, e)
     })
   }
 
-  #handleWebviewMessage(doc: PixelDoc, e: WebviewMessage) {
+  #onMessage(doc: PixelDoc, e: WebviewMessage) {
     console.log("webview -> extension " + e.type, e)
 
     const { type } = e
