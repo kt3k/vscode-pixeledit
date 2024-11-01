@@ -338,6 +338,13 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     for (const edit of data.doc.edits) {
       currentEdit.update(edit)
     }
+  } else if (type === "nextImages") {
+    const preview = document.querySelector(".preview")!
+    for (const [filename, dataUri] of data.images) {
+      const img = new Image()
+      img.src = dataUri
+      preview.appendChild(img)
+    }
   }
 }
 globalThis.addEventListener("message", onMessage)

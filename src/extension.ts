@@ -17,6 +17,7 @@ import {
 } from "vscode"
 import { Buffer } from "node:buffer"
 import type { Edit, ExtensionMessageData, WebviewMessage } from "./types"
+import { dirname, join } from "node:path"
 
 const { fs } = workspace
 
@@ -57,6 +58,10 @@ async function readFile(uri: Uri): Promise<Uint8Array> {
   return uri.scheme === "untitled" ? new Uint8Array() : fs.readFile(uri)
 }
 
+function toDataUri(bytes: Uint8Array) {
+  return "data:image/png;base64," + Buffer.from(bytes).toString("base64")
+}
+
 /** The document */
 class PixelDoc implements CustomDocument {
   /** The current edits */
@@ -65,12 +70,25 @@ class PixelDoc implements CustomDocument {
   #saved: Edit[] = []
   /** The key */
   readonly key: string
+  /** The png files next to the doc */
+  images: [string, string][] = []
   constructor(public readonly uri: Uri, public bytes: Uint8Array) {
     this.key = uri.toString()
   }
+  async readNextFiles() {
+    const dir = Uri.file(dirname(this.uri.fsPath))
+    const files = await fs.readDirectory(dir)
+    const pngs = files.filter(([name, type]) => name.endsWith(".png"))
+    this.images = await Promise.all(
+      pngs.map(([name]) =>
+        fs.readFile(Uri.file(join(dir.fsPath, name))).then((bytes) =>
+          [name, toDataUri(bytes)] as [string, string]
+        )
+      ),
+    )
+  }
   get dataUri() {
-    return "data:image/png;base64," +
-      Buffer.from(this.bytes).toString("base64")
+    return toDataUri(this.bytes)
   }
   dispose() {}
   onEdit(edit: Edit) {
@@ -111,7 +129,9 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
     _token: CancellationToken,
   ): Promise<PixelDoc> {
     const bytes = await readFile(backupId ? Uri.parse(backupId) : uri)
-    return new PixelDoc(uri, bytes)
+    const doc = new PixelDoc(uri, bytes)
+    await doc.readNextFiles()
+    return doc
   }
 
   async resolveCustomEditor(
@@ -140,8 +160,6 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
   }
 
   #onMessage(doc: PixelDoc, e: WebviewMessage) {
-    console.log("webview -> extension " + e.type, e)
-
     const { type } = e
     if (type === "edit") {
       doc.onEdit(e.edit)
@@ -168,6 +186,10 @@ class PixelEdit implements CustomEditorProvider<PixelDoc> {
           type: "init",
           dataUri: doc.dataUri,
           edits: doc.edits,
+        })
+        postMessage(this.#webviews[doc.key], {
+          type: "nextImages",
+          images: doc.images,
         })
       }
     }

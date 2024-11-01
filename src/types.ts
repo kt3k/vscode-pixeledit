@@ -40,4 +40,7 @@ export type ExtensionMessageData = {
     readonly dataUri: string
     readonly edits: Edit[]
   }
+} | {
+  readonly type: "nextImages"
+  readonly images: [string, string][]
 }
