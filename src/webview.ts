@@ -343,6 +343,7 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     for (const [filename, dataUri] of data.images) {
       const img = new Image()
       img.src = dataUri
+      img.classList.add("crisp-edges")
       preview.appendChild(img)
     }
   }
