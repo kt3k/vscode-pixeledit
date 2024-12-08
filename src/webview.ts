@@ -1,7 +1,7 @@
 // Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
 
 /// <reference lib="dom" />
-/// <reference path="../node_modules/@types/vscode-webview/index.d.ts" />
+/// <reference types="npm:@types/vscode-webview" />
 
 import { type Context, register, Signal } from "@kt3k/cell"
 
