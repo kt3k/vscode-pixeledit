@@ -1,5 +1,7 @@
 // Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
 
+/// <reference no-default-lib="true"/>
+/// <reference lib="esnext"/>
 /// <reference lib="dom" />
 /// <reference types="npm:@types/vscode-webview" />
 
@@ -309,7 +311,7 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
 }
 
 // deno-lint-ignore no-explicit-any
-export const vscode: any = typeof Deno === "object"
+export const vscode = typeof (globalThis as any).Deno === "object"
   ? { postMessage: () => {} }
   : acquireVsCodeApi()
 function postMessage(message: WebviewMessage) {

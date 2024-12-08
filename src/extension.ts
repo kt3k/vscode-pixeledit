@@ -1,5 +1,6 @@
 // Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
 
+// @deno-types="npm:@types/vscode"
 import {
   type CancellationToken,
   commands,
@@ -16,7 +17,7 @@ import {
   workspace,
 } from "vscode"
 import { Buffer } from "node:buffer"
-import type { Edit, ExtensionMessageData, WebviewMessage } from "./types"
+import type { Edit, ExtensionMessageData, WebviewMessage } from "./types.ts"
 import { dirname, join } from "node:path"
 
 const { fs } = workspace
