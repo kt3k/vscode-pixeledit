@@ -9,7 +9,7 @@
     "vscode": "^1.85.2"
   },
   "scripts": {
-    "t": "deno test -A --coverage --clean && tsc -p ./ && npm run vscode-test && deno coverage",
+    "t": "deno test -A --coverage --clean && deno run vscode-test && deno coverage",
     "vscode-test": "vscode-test",
     "build": "deno run build:extension && deno run build:webview && deno run build:tailwind && cp src/*.html src/*.css out/",
     "build:webview": "deno -A jsr:@kt3k/pack@0.1.14 src/webview.ts -o out/webview.js",
