@@ -11,8 +11,9 @@
   "scripts": {
     "t": "deno test -A --coverage --clean && tsc -p ./ && npm run vscode-test && deno coverage",
     "vscode-test": "vscode-test",
-    "build": "tsc -p ./ && deno run build:webview && deno run build:tailwind && cp src/*.html src/*.css out/",
-    "build:webview": "deno -A jsr:@kt3k/pack@0.1.10 src/webview.ts -o out/webview.js",
+    "build": "deno run build:extension && deno run build:webview && deno run build:tailwind && cp src/*.html src/*.css out/",
+    "build:webview": "deno -A jsr:@kt3k/pack@0.1.14 src/webview.ts -o out/webview.js",
+    "build:extension": "deno -A jsr:@kt3k/pack@0.1.14 src/extension.ts -o out/extension.js --external vscode --format cjs",
     "build:tailwind": "deno -A npm:tailwindcss -o src/tailwind.css",
     "fmt": "deno fmt --unstable-css",
     "package": "vsce package"
@@ -54,9 +55,6 @@
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
     "@vscode/vsce": "^2.29.0",
-    "typescript": "^5.3.3"
-  },
-  "dependencies": {
     "tailwindcss": "^3.4.13"
   }
 }
