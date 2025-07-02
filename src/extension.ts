@@ -79,7 +79,7 @@ class PixelDoc implements CustomDocument {
   async readNextFiles() {
     const dir = Uri.file(dirname(this.uri.fsPath))
     const files = await fs.readDirectory(dir)
-    const pngs = files.filter(([name, type]) => name.endsWith(".png"))
+    const pngs = files.filter(([name, _type]) => name.endsWith(".png"))
     this.images = await Promise.all(
       pngs.map(([name]) =>
         fs.readFile(Uri.file(join(dir.fsPath, name))).then((bytes) =>

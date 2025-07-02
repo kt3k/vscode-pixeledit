@@ -342,7 +342,7 @@ const onMessage = async ({ data }: ExtensionMessageEvent) => {
     }
   } else if (type === "nextImages") {
     const preview = document.querySelector(".preview")!
-    for (const [filename, dataUri] of data.images) {
+    for (const [_filename, dataUri] of data.images) {
       const img = new Image()
       img.src = dataUri
       img.classList.add("crisp-edges")
