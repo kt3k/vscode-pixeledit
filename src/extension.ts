@@ -1,6 +1,6 @@
 // Copyright 2022-2024 Yoshiya Hinosawa. All rights reserved. MIT license.
 
-// @ts-types="npm:@types/vscode"
+// @ts-types="@types/vscode"
 import {
   type CancellationToken,
   commands,

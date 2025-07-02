@@ -3,7 +3,7 @@
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext"/>
 /// <reference lib="dom" />
-/// <reference types="npm:@types/vscode-webview" />
+/// <reference types="@types/vscode-webview" />
 
 import { type Context, register, Signal } from "@kt3k/cell"
 
