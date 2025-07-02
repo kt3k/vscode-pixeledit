@@ -234,6 +234,29 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
+function CanvasBackground(
+  { el: canvas, subscribe }: Context<HTMLCanvasElement>,
+) {
+  const ctx = canvas.getContext("2d")!
+  subscribe(baseData, (data) => {
+    const S = CELL_SIZE / 2
+    const w = data.length
+    const h = data[0]?.length || 0
+    canvas.width = w * CELL_SIZE
+    canvas.height = h * CELL_SIZE || 0
+    for (let i = 0; i < w * 2; i++) {
+      for (let j = 0; j < h * 2; j++) {
+        if ((i + j) % 2 === 0) {
+          ctx.fillStyle = "#c0c0c0"
+        } else {
+          ctx.fillStyle = "#d0d0d0"
+        }
+        ctx.fillRect(i * S, j * S, S, S)
+      }
+    }
+  })
+}
+
 /** Mini Canvas UI Component at the top of the screen */
 function MiniCanvas({ el: canvas, subscribe }: Context<HTMLCanvasElement>) {
   const ctx = canvas.getContext("2d")!
@@ -363,4 +386,5 @@ register(Palette, "js-palette")
 register(Tools, "js-tools")
 register(MiniCanvas, "js-mini-canvas")
 register(Canvas, "js-canvas")
+register(CanvasBackground, "js-canvas-background")
 postMessage({ type: "ready" })
