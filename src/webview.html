@@ -15,13 +15,15 @@
         <canvas class="js-mini-canvas crisp-edges"></canvas>
       </span>
     </div>
-    <div class="preview mt-2 flex gap-2 p-2 bg-gray-500 rounded"></div>
-    <div class="mt-4 flex items-start justify-between">
-      <div class="js-tools grid grid-cols-2"></div>
+    <div class="preview mt-2 flex gap-4 p-2 bg-gray-500 rounded"></div>
+    <div class="mt-4 flex items-start gap-4">
+      <div class="flex flex-col gap-4">
+        <div class="js-tools grid grid-cols-2"></div>
+        <div class="js-palette grid grid-cols-2"></div>
+      </div>
       <canvas
         class="js-canvas block shadow-lg w-3/4 max-w-[550px] cursor-crosshair crisp-edges bg-gray-500"
       ></canvas>
-      <div class="js-palette w-24 grid grid-cols-2"></div>
     </div>
   </body>
   <script src="${scriptUri}" type="module"></script>

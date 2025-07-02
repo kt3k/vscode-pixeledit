@@ -16,13 +16,12 @@ import type {
   WebviewMessage,
 } from "./types.ts"
 
-type Tool = "pen" | "eraser" | "fill"
+type Tool = "pen" | "fill"
 const currentTool = new Signal<Tool>("pen")
 type ToolBtn = { tool: Tool; label: string }
 const toolBtns: ToolBtn[] = [
   { tool: "pen", label: "✒️" },
-  { tool: "eraser", label: "消" },
-  { tool: "fill", label: "塗" },
+  { tool: "fill", label: "🪣" },
 ]
 const currentColor = new Signal<Color>([0, 0, 0, 255])
 type Data = Color[][]
@@ -40,6 +39,7 @@ baseData.subscribe((data) => {
 })
 
 const paletteColors = new Signal<Color[]>([
+  [0, 0, 0, 0],
   [0, 0, 0, 255],
   [0x7c, 0x7c, 0x7c, 255],
   [0xbc, 0xbc, 0xbc, 255],
@@ -59,9 +59,6 @@ const paletteColors = new Signal<Color[]>([
   [255, 201, 14, 255],
   [239, 228, 176, 255],
   [181, 230, 29, 255],
-  [153, 217, 234, 255],
-  [112, 146, 190, 255],
-  [200, 191, 231, 255],
 ])
 
 export function toCssColor(c: Color) {
@@ -113,11 +110,6 @@ function Canvas({ el: canvas, on, subscribe }: Context<HTMLCanvasElement>) {
       edit = {
         color: currentColor.get(),
         stroke: fill(x, y, width, height, currentDataCache[x][y]),
-      }
-    } else if (tool === "eraser") {
-      edit = {
-        color: TRANSPARENT,
-        stroke: [[x, y]],
       }
     } else {
       // Pen tool
@@ -242,6 +234,7 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
+/** Mini Canvas UI Component at the top of the screen */
 function MiniCanvas({ el: canvas, subscribe }: Context<HTMLCanvasElement>) {
   const ctx = canvas.getContext("2d")!
   subscribe(baseData, (data) => {
@@ -264,7 +257,7 @@ function Tools({ el, on, queryAll, subscribe }: Context) {
 
   el.innerHTML = toolBtns.map((btn) => `
     <span
-      class="item border border-gray-300 w-12 h-12 flex justify-center items-center text-2xl"
+      class="item border border-gray-300 w-12 h-12 flex justify-center items-center cursor-pointer text-2xl"
       data-tool="${btn.tool}"
     >${btn.label}</span>
   `).join("")
@@ -284,20 +277,33 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
   })
 
   subscribe(paletteColors, (colors) => {
-    el.innerHTML = colors.map((color) =>
-      `<span
-         class="item relative flex items-end w-12 h-12 border border-transparent hover:border-gray-500 cursor-pointer"
-         data-color="${JSON.stringify(color)}"
-         style="background-color: ${toCssColor(color)};"
-      >
+    el.innerHTML = colors.map((color) => {
+      const alpha = color[3]
+      let alphaLabel = ""
+      if (alpha !== 255) {
+        alphaLabel = `
+          <span
+            class="text-white absolute top-0 right-0"
+          >
+            A${alpha}
+          </span>
+        `
+      }
+      return `
         <span
-          class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center"
-          style="font-size: 0.5rem;"
+          class="item relative flex items-end w-12 h-12 border border-gray-300 hover:border-gray-500 cursor-pointer font-mono"
+          data-color="${JSON.stringify(color)}"
+          style="background-color: ${toCssColor(color)}; font-size: 0.5rem;"
         >
-          ${toHex(color)}
+          <span
+            class="text-white bg-gray-800 bg-opacity-70 absolute bottom-0 w-full text-center"
+          >
+            ${toHex(color)}
+          </span>
+          ${alphaLabel}
         </span>
-      </span>`
-    ).join("\n")
+      `
+    }).join("\n")
   })
 
   subscribe(currentColor, (color) => {
@@ -314,6 +320,7 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
 export const vscode = typeof (globalThis as any).Deno === "object"
   ? { postMessage: () => {} }
   : acquireVsCodeApi()
+
 function postMessage(message: WebviewMessage) {
   vscode.postMessage(message)
 }
