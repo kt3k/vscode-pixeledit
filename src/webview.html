@@ -10,16 +10,16 @@
     </style>
   </head>
   <body>
-    <div class="flex mt-2">
-      <span class="bg-gray-500 rounded p-2">
+    <div class="flex gap-2 mt-2">
+      <span class="bg-gray-500 p-2 rounded">
         <canvas class="js-mini-canvas crisp-edges"></canvas>
       </span>
+      <div class="preview flex gap-4 p-2 bg-gray-500 rounded"></div>
     </div>
-    <div class="preview mt-2 flex gap-4 p-2 bg-gray-500 rounded"></div>
-    <div class="mt-4 flex items-start gap-4">
-      <div class="flex flex-col gap-4">
-        <div class="js-tools grid grid-cols-2"></div>
-        <div class="js-palette grid grid-cols-2"></div>
+    <div class="mt-3 flex items-start gap-4">
+      <div class="flex flex-col gap-3">
+        <div class="js-tools grid grid-cols-4"></div>
+        <div class="js-palette grid grid-cols-4"></div>
       </div>
       <div class="relative w-3/4 max-w-[550px]">
         <canvas

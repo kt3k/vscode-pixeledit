@@ -39,26 +39,75 @@ baseData.subscribe((data) => {
 })
 
 const paletteColors = new Signal<Color[]>([
-  [0, 0, 0, 0],
-  [0, 0, 0, 255],
-  [0x7c, 0x7c, 0x7c, 255],
-  [0xbc, 0xbc, 0xbc, 255],
-  [0xf8, 0xf8, 0xf8, 255],
-  [0xfc, 0xfc, 0xfc, 255],
-  [237, 28, 36, 255],
-  [255, 127, 39, 255],
-  [255, 242, 0, 255],
-  [34, 177, 36, 255],
-  [0, 162, 232, 255],
-  [63, 72, 204, 255],
-  [163, 73, 164, 255],
+  [0, 0, 0, 0], // Transparent
   [255, 255, 255, 255],
-  [195, 195, 195, 255],
-  [185, 122, 87, 255],
-  [255, 174, 201, 255],
-  [255, 201, 14, 255],
-  [239, 228, 176, 255],
-  [181, 230, 29, 255],
+  [185, 188, 185, 255],
+  [106, 109, 106, 255],
+
+  [190, 193, 190, 255],
+  [74, 77, 74, 255],
+  [0, 0, 0, 255],
+  [0, 0, 0, 255],
+
+  [204, 234, 255, 255],
+  [104, 165, 255, 255],
+  [25, 80, 199, 255],
+  [0, 20, 128, 255],
+
+  [221, 222, 255, 255],
+  [140, 156, 255, 255],
+  [75, 48, 227, 255],
+  [31, 0, 138, 255],
+
+  [236, 218, 255, 255],
+  [181, 134, 255, 255],
+  [115, 34, 214, 255],
+  [56, 0, 122, 255],
+
+  [248, 215, 253, 255],
+  [217, 117, 253, 255],
+  [149, 31, 169, 255],
+  [84, 0, 86, 255],
+
+  [252, 213, 245, 255],
+  [227, 119, 185, 255],
+  [157, 40, 92, 255],
+  [90, 0, 25, 255],
+
+  [252, 219, 207, 255],
+  [229, 141, 104, 255],
+  [152, 54, 0, 255],
+  [79, 16, 0, 255],
+
+  [249, 231, 181, 255],
+  [212, 157, 41, 255],
+  [127, 75, 1, 255],
+  [61, 28, 0, 255],
+
+  [241, 240, 170, 255],
+  [178, 175, 13, 255],
+  [94, 100, 0, 255],
+  [37, 50, 0, 255],
+
+  [218, 250, 169, 255],
+  [123, 194, 18, 255],
+  [35, 118, 1, 255],
+  [1, 61, 0, 255],
+
+  [201, 254, 188, 255],
+  [86, 201, 71, 255],
+  [4, 126, 3, 255],
+  [0, 64, 0, 255],
+
+  [194, 250, 215, 255],
+  [70, 203, 128, 255],
+  [0, 118, 68, 255],
+  [1, 57, 36, 255],
+
+  [196, 246, 246, 255],
+  [71, 192, 196, 255],
+  [0, 110, 138, 255],
+  [0, 46, 85, 255],
 ])
 
 export function toCssColor(c: Color) {
@@ -280,7 +329,7 @@ function Tools({ el, on, queryAll, subscribe }: Context) {
 
   el.innerHTML = toolBtns.map((btn) => `
     <span
-      class="item border border-gray-300 w-12 h-12 flex justify-center items-center cursor-pointer text-2xl"
+      class="item border border-gray-300 w-11 h-11 flex justify-center items-center cursor-pointer text-2xl"
       data-tool="${btn.tool}"
     >${btn.label}</span>
   `).join("")
@@ -314,7 +363,7 @@ function Palette({ el, on, queryAll, subscribe }: Context) {
       }
       return `
         <span
-          class="item relative flex items-end w-12 h-12 border border-gray-300 hover:border-gray-500 cursor-pointer font-mono"
+          class="item relative flex items-end w-11 h-11 border border-gray-300 hover:border-gray-500 cursor-pointer font-mono"
           data-color="${JSON.stringify(color)}"
           style="background-color: ${toCssColor(color)}; font-size: 0.5rem;"
         >
