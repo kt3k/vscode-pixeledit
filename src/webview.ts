@@ -306,6 +306,35 @@ function CanvasBackground(
   })
 }
 
+function CanvasForeground(
+  { el: canvas, subscribe }: Context<HTMLCanvasElement>,
+) {
+  const ctx = canvas.getContext("2d")!
+  subscribe(baseData, (data) => {
+    const S = CELL_SIZE * 10
+    const w = data.length
+    const h = data[0]?.length || 0
+    canvas.width = w * S
+    canvas.height = h * S || 0
+    ctx.strokeStyle = "white"
+    ctx.fillStyle = "red"
+    ctx.lineWidth = 1
+    for (let i = 1; i < w; i++) {
+      ctx.beginPath()
+      ctx.setLineDash([10, 10])
+      ctx.moveTo(i * S, 0)
+      ctx.lineTo(i * S, h * S)
+      ctx.stroke()
+    }
+    for (let j = 1; j < h; j++) {
+      ctx.beginPath()
+      ctx.moveTo(0, j * S)
+      ctx.lineTo(w * S, j * S)
+      ctx.stroke()
+    }
+  })
+}
+
 /** Mini Canvas UI Component at the top of the screen */
 function MiniCanvas({ el: canvas, subscribe }: Context<HTMLCanvasElement>) {
   const ctx = canvas.getContext("2d")!
@@ -436,4 +465,5 @@ register(Tools, "js-tools")
 register(MiniCanvas, "js-mini-canvas")
 register(Canvas, "js-canvas")
 register(CanvasBackground, "js-canvas-background")
+register(CanvasForeground, "js-canvas-foreground")
 postMessage({ type: "ready" })
