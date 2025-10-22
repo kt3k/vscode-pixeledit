@@ -16,11 +16,12 @@ import type {
   WebviewMessage,
 } from "./types.ts"
 
-type Tool = "pen" | "fill"
+type Tool = "pen" | "stroke" | "fill"
 const currentTool = new Signal<Tool>("pen")
 type ToolBtn = { tool: Tool; label: string }
 const toolBtns: ToolBtn[] = [
   { tool: "pen", label: "✒️" },
+  { tool: "stroke", label: "🖌️" },
   { tool: "fill", label: "🪣" },
 ]
 const currentColor = new Signal<Color>([0, 0, 0, 255])
@@ -39,7 +40,7 @@ baseData.subscribe((data) => {
 })
 
 const paletteColors = new Signal<Color[]>([
-  [0, 0, 0, 0], // Transparent
+  TRANSPARENT,
   [255, 255, 255, 255],
   [185, 188, 185, 255],
   [106, 109, 106, 255],
@@ -127,18 +128,35 @@ export function* range(n: number) {
   }
 }
 
+function isSameColor(a: Color, b: Color) {
+  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]
+}
+
+function getCoordinate(
+  e: MouseEvent,
+  el: HTMLCanvasElement,
+  width: number,
+  height: number,
+): [number, number, boolean] {
+  const rect = el.getBoundingClientRect()
+  const x = Math.floor(width * (e.clientX - rect.left) / el.clientWidth)
+  const y = Math.floor(height * (e.clientY - rect.top) / el.clientHeight)
+  const isValid = x >= 0 && x < width && y >= 0 && y < height
+  return [x, y, isValid]
+}
+
 const CELL_SIZE = 10
 
-function Canvas({ el: canvas, on, subscribe }: Context<HTMLCanvasElement>) {
-  const ctx = canvas.getContext("2d")!
+function Canvas({ el, on, subscribe }: Context<HTMLCanvasElement>) {
+  const ctx = el.getContext("2d")!
   let width = 0
   let height = 0
 
   subscribe(baseData, (data) => {
     width = data.length
     height = data[0]?.length || 0
-    canvas.width = width * CELL_SIZE
-    canvas.height = height * CELL_SIZE
+    el.width = width * CELL_SIZE
+    el.height = height * CELL_SIZE
     drawData(ctx, data, CELL_SIZE)
   })
 
@@ -146,13 +164,28 @@ function Canvas({ el: canvas, on, subscribe }: Context<HTMLCanvasElement>) {
     drawEdit(ctx, edit, CELL_SIZE)
   })
 
-  on("mouseup", (e) => {
-    const rect = canvas.getBoundingClientRect()
-    const x = Math.floor(width * (e.clientX - rect.left) / canvas.clientWidth)
-    const y = Math.floor(height * (e.clientY - rect.top) / canvas.clientHeight)
-    if (!(x >= 0 && x < width && y >= 0 && y < height)) {
-      return
+  on("mousemove", (e) => {
+    const [x, y, isValid] = getCoordinate(e, el, width, height)
+    if (!isValid) return
+
+    const tool = currentTool.get()
+    if (tool !== "stroke") return
+
+    const color = currentDataCache[x][y]
+    if (isSameColor(color, currentColor.get())) return
+
+    const edit: Edit = {
+      color: currentColor.get(),
+      stroke: [[x, y]],
     }
+    currentEdit.update(edit)
+    postMessage({ type: "edit", edit })
+  })
+
+  on("mouseup", (e) => {
+    const [x, y, isValid] = getCoordinate(e, el, width, height)
+    if (!isValid) return
+
     let edit: Edit
     const tool = currentTool.get()
     if (tool === "fill") {
@@ -238,9 +271,9 @@ function fill(
   y: number,
   dataWidth: number,
   dataHeight: number,
-  cc: Color,
+  c: Color,
 ): Stroke {
-  return Array.from(filler(x, y, dataWidth, dataHeight, cc))
+  return Array.from(filler(x, y, dataWidth, dataHeight, c))
 }
 
 function* filler(
@@ -248,30 +281,19 @@ function* filler(
   y: number,
   dataWidth: number,
   dataHeight: number,
-  cc: Color,
+  c: Color,
   cache: Set<string> = new Set(),
 ): Generator<Point> {
   const key = `${x},${y}`
-  if (cache.has(key)) {
-    return
-  }
+  if (cache.has(key)) return
   cache.add(key)
-
-  if (x < 0 || x >= dataWidth || y < 0 || y >= dataHeight) {
-    return
-  }
-  const color = currentDataCache[x][y]
-  if (
-    cc[0] !== color[0] || cc[1] !== color[1] || cc[2] !== color[2] ||
-    cc[3] !== color[3]
-  ) {
-    return
-  }
+  if (x < 0 || x >= dataWidth || y < 0 || y >= dataHeight) return
+  if (!isSameColor(currentDataCache[x][y], c)) return
   yield [x, y]
-  yield* filler(x + 1, y, dataWidth, dataHeight, cc, cache)
-  yield* filler(x, y + 1, dataWidth, dataHeight, cc, cache)
-  yield* filler(x - 1, y, dataWidth, dataHeight, cc, cache)
-  yield* filler(x, y - 1, dataWidth, dataHeight, cc, cache)
+  yield* filler(x + 1, y, dataWidth, dataHeight, c, cache)
+  yield* filler(x, y + 1, dataWidth, dataHeight, c, cache)
+  yield* filler(x - 1, y, dataWidth, dataHeight, c, cache)
+  yield* filler(x, y - 1, dataWidth, dataHeight, c, cache)
 }
 
 function loadImage(uri: string): Promise<HTMLImageElement> {
@@ -283,16 +305,14 @@ function loadImage(uri: string): Promise<HTMLImageElement> {
   })
 }
 
-function CanvasBackground(
-  { el: canvas, subscribe }: Context<HTMLCanvasElement>,
-) {
-  const ctx = canvas.getContext("2d")!
+function CanvasBackground({ el, subscribe }: Context<HTMLCanvasElement>) {
+  const ctx = el.getContext("2d")!
   subscribe(baseData, (data) => {
     const S = CELL_SIZE / 2
     const w = data.length
     const h = data[0]?.length || 0
-    canvas.width = w * CELL_SIZE
-    canvas.height = h * CELL_SIZE || 0
+    el.width = w * CELL_SIZE
+    el.height = h * CELL_SIZE || 0
     for (let i = 0; i < w * 2; i++) {
       for (let j = 0; j < h * 2; j++) {
         if ((i + j) % 2 === 0) {
@@ -306,16 +326,14 @@ function CanvasBackground(
   })
 }
 
-function CanvasForeground(
-  { el: canvas, subscribe }: Context<HTMLCanvasElement>,
-) {
-  const ctx = canvas.getContext("2d")!
+function CanvasForeground({ el, subscribe }: Context<HTMLCanvasElement>) {
+  const ctx = el.getContext("2d")!
   subscribe(baseData, (data) => {
     const S = CELL_SIZE * 10
     const w = data.length
     const h = data[0]?.length || 0
-    canvas.width = w * S
-    canvas.height = h * S || 0
+    el.width = w * S
+    el.height = h * S || 0
     ctx.strokeStyle = "white"
     ctx.fillStyle = "red"
     ctx.lineWidth = 1
@@ -427,37 +445,62 @@ function postMessage(message: WebviewMessage) {
 }
 
 const onMessage = async ({ data }: ExtensionMessageEvent) => {
-  const { type } = data
-  if (type === "init") {
-    const img = await loadImage(data.dataUri)
-    importImage(img)
-    for (const edit of data.edits) {
-      currentEdit.update(edit)
+  switch (data.type) {
+    case "init": {
+      const img = await loadImage(data.dataUri)
+      importImage(img)
+      for (const edit of data.edits) {
+        currentEdit.update(edit)
+      }
+      break
     }
-  } else if (type === "new") {
-    // TODO: Implement new
-  } else if (type === "getBytes") {
-    postMessage({
-      type: "response",
-      requestId: data.requestId,
-      body: exportImage(currentDataCache),
-    })
-  } else if (type === "update") {
-    const img = await loadImage(data.doc.dataUri)
-    importImage(img)
-    for (const edit of data.doc.edits) {
-      currentEdit.update(edit)
+    case "new": {
+      // TODO: Implement new
+      break
     }
-  } else if (type === "nextImages") {
-    const preview = document.querySelector(".preview")!
-    for (const [_filename, dataUri] of data.images) {
-      const img = new Image()
-      img.src = dataUri
-      img.classList.add("crisp-edges")
-      preview.appendChild(img)
+    case "getBytes": {
+      postMessage({
+        type: "response",
+        requestId: data.requestId,
+        body: exportImage(currentDataCache),
+      })
+      break
+    }
+    case "update": {
+      const img = await loadImage(data.doc.dataUri)
+      importImage(img)
+      for (const edit of data.doc.edits) {
+        currentEdit.update(edit)
+      }
+      break
+    }
+    case "nextImages": {
+      const preview = document.querySelector(".preview")!
+      for (const [_filename, dataUri] of data.images) {
+        const img = new Image()
+        img.src = dataUri
+        img.classList.add("crisp-edges")
+        preview.appendChild(img)
+      }
+      break
     }
   }
 }
+
+function KeyMonitor({ on }: Context) {
+  on("keydown", (e) => {
+    if (e.altKey || e.metaKey) {
+      return
+    } else if (e.key === "s") {
+      currentTool.update("stroke")
+    } else if (e.key === "f") {
+      currentTool.update("fill")
+    } else if (e.key === "Escape") {
+      currentTool.update("pen")
+    }
+  })
+}
+
 globalThis.addEventListener("message", onMessage)
 
 register(Palette, "js-palette")
@@ -466,4 +509,5 @@ register(MiniCanvas, "js-mini-canvas")
 register(Canvas, "js-canvas")
 register(CanvasBackground, "js-canvas-background")
 register(CanvasForeground, "js-canvas-foreground")
+register(KeyMonitor, "js-key-monitor")
 postMessage({ type: "ready" })
