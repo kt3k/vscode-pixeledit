@@ -16,7 +16,8 @@
     "build:extension": "deno -A jsr:@kt3k/pack@0.1.14 src/extension.ts -o out/extension.js --external vscode --format cjs",
     "build:tailwind": "deno -A npm:tailwindcss -o src/tailwind.css",
     "fmt": "deno fmt --unstable-css",
-    "package": "vsce package"
+    "package": "vsce package",
+    "update": "npm run package && code --install-extension vscode-pixeledit-0.1.3.vsix"
   },
   "categories": [
     "Other"
